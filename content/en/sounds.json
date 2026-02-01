@@ -1,0 +1,114 @@
+{
+  "locale": "en-GB",
+  "schemaVersion": 1,
+  "phases": {
+    "1": {
+      "name": "First Sounds",
+      "description": "Core sounds Lucy can pronounce at age 3. Enables early blending (sat, map, nap, tap, man, pan).",
+      "sounds": ["m", "s", "a", "t", "p", "n"]
+    },
+    "2": {
+      "name": "Expanding",
+      "description": "Next tier of age-appropriate sounds.",
+      "sounds": ["i", "d", "h", "b", "k", "e"]
+    }
+  },
+  "sounds": [
+    {
+      "id": "m",
+      "locale": "en-GB",
+      "type": "consonant",
+      "display": "m",
+      "phase": 1,
+      "phonemeAudio": "phonemes/m.mp3",
+      "pronunciationTip": "Say 'mmm', not 'muh'. A continuous humming sound.",
+      "exampleWords": [
+        { "word": "moon", "imageAsset": "img/sounds/m/moon.png", "wordAudio": "words/m-moon.mp3", "soundPosition": "start" },
+        { "word": "monkey", "imageAsset": "img/sounds/m/monkey.png", "wordAudio": "words/m-monkey.mp3", "soundPosition": "start" },
+        { "word": "map", "imageAsset": "img/sounds/m/map.png", "wordAudio": "words/m-map.mp3", "soundPosition": "start" },
+        { "word": "mouse", "imageAsset": "img/sounds/m/mouse.png", "wordAudio": "words/m-mouse.mp3", "soundPosition": "start" },
+        { "word": "milk", "imageAsset": "img/sounds/m/milk.png", "wordAudio": "words/m-milk.mp3", "soundPosition": "start" }
+      ]
+    },
+    {
+      "id": "s",
+      "locale": "en-GB",
+      "type": "consonant",
+      "display": "s",
+      "phase": 1,
+      "phonemeAudio": "phonemes/s.mp3",
+      "pronunciationTip": "Say 'sss', not 'suh'. Like a snake hissing.",
+      "exampleWords": [
+        { "word": "snake", "imageAsset": "img/sounds/s/snake.png", "wordAudio": "words/s-snake.mp3", "soundPosition": "start" },
+        { "word": "sun", "imageAsset": "img/sounds/s/sun.png", "wordAudio": "words/s-sun.mp3", "soundPosition": "start" },
+        { "word": "sock", "imageAsset": "img/sounds/s/sock.png", "wordAudio": "words/s-sock.mp3", "soundPosition": "start" },
+        { "word": "star", "imageAsset": "img/sounds/s/star.png", "wordAudio": "words/s-star.mp3", "soundPosition": "start" },
+        { "word": "snail", "imageAsset": "img/sounds/s/snail.png", "wordAudio": "words/s-snail.mp3", "soundPosition": "start" }
+      ]
+    },
+    {
+      "id": "a",
+      "locale": "en-GB",
+      "type": "short-vowel",
+      "display": "a",
+      "phase": 1,
+      "phonemeAudio": "phonemes/a.mp3",
+      "pronunciationTip": "The short 'a' as in 'apple'. Say 'aaa', not 'ay'.",
+      "exampleWords": [
+        { "word": "apple", "imageAsset": "img/sounds/a/apple.png", "wordAudio": "words/a-apple.mp3", "soundPosition": "start" },
+        { "word": "ant", "imageAsset": "img/sounds/a/ant.png", "wordAudio": "words/a-ant.mp3", "soundPosition": "start" },
+        { "word": "cat", "imageAsset": "img/sounds/a/cat.png", "wordAudio": "words/a-cat.mp3", "soundPosition": "middle" },
+        { "word": "hat", "imageAsset": "img/sounds/a/hat.png", "wordAudio": "words/a-hat.mp3", "soundPosition": "middle" },
+        { "word": "bat", "imageAsset": "img/sounds/a/bat.png", "wordAudio": "words/a-bat.mp3", "soundPosition": "middle" }
+      ]
+    },
+    {
+      "id": "t",
+      "locale": "en-GB",
+      "type": "consonant",
+      "display": "t",
+      "phase": 1,
+      "phonemeAudio": "phonemes/t.mp3",
+      "pronunciationTip": "Say 't-', not 'tuh'. A short sharp sound, tongue behind top teeth.",
+      "exampleWords": [
+        { "word": "tent", "imageAsset": "img/sounds/t/tent.png", "wordAudio": "words/t-tent.mp3", "soundPosition": "start" },
+        { "word": "tiger", "imageAsset": "img/sounds/t/tiger.png", "wordAudio": "words/t-tiger.mp3", "soundPosition": "start" },
+        { "word": "tree", "imageAsset": "img/sounds/t/tree.png", "wordAudio": "words/t-tree.mp3", "soundPosition": "start" },
+        { "word": "train", "imageAsset": "img/sounds/t/train.png", "wordAudio": "words/t-train.mp3", "soundPosition": "start" },
+        { "word": "turtle", "imageAsset": "img/sounds/t/turtle.png", "wordAudio": "words/t-turtle.mp3", "soundPosition": "start" }
+      ]
+    },
+    {
+      "id": "p",
+      "locale": "en-GB",
+      "type": "consonant",
+      "display": "p",
+      "phase": 1,
+      "phonemeAudio": "phonemes/p.mp3",
+      "pronunciationTip": "Say 'p-', not 'puh'. A quick pop of air from closed lips.",
+      "exampleWords": [
+        { "word": "pig", "imageAsset": "img/sounds/p/pig.png", "wordAudio": "words/p-pig.mp3", "soundPosition": "start" },
+        { "word": "pan", "imageAsset": "img/sounds/p/pan.png", "wordAudio": "words/p-pan.mp3", "soundPosition": "start" },
+        { "word": "penguin", "imageAsset": "img/sounds/p/penguin.png", "wordAudio": "words/p-penguin.mp3", "soundPosition": "start" },
+        { "word": "pink", "imageAsset": "img/sounds/p/pink.png", "wordAudio": "words/p-pink.mp3", "soundPosition": "start" },
+        { "word": "puppy", "imageAsset": "img/sounds/p/puppy.png", "wordAudio": "words/p-puppy.mp3", "soundPosition": "start" }
+      ]
+    },
+    {
+      "id": "n",
+      "locale": "en-GB",
+      "type": "consonant",
+      "display": "n",
+      "phase": 1,
+      "phonemeAudio": "phonemes/n.mp3",
+      "pronunciationTip": "Say 'nnn', not 'nuh'. Tongue behind top teeth, continuous hum through nose.",
+      "exampleWords": [
+        { "word": "nose", "imageAsset": "img/sounds/n/nose.png", "wordAudio": "words/n-nose.mp3", "soundPosition": "start" },
+        { "word": "nut", "imageAsset": "img/sounds/n/nut.png", "wordAudio": "words/n-nut.mp3", "soundPosition": "start" },
+        { "word": "nest", "imageAsset": "img/sounds/n/nest.png", "wordAudio": "words/n-nest.mp3", "soundPosition": "start" },
+        { "word": "net", "imageAsset": "img/sounds/n/net.png", "wordAudio": "words/n-net.mp3", "soundPosition": "start" },
+        { "word": "nap", "imageAsset": "img/sounds/n/nap.png", "wordAudio": "words/n-nap.mp3", "soundPosition": "start" }
+      ]
+    }
+  ]
+}
