@@ -61,6 +61,13 @@ export const useAudio = () => {
     [playUrl]
   );
 
+  const playIntro = useCallback(
+    (soundId: string) => {
+      playUrl(getAudioUrl(`introductions/intro-${soundId}.mp3`));
+    },
+    [playUrl]
+  );
+
   const playUi = useCallback(
     (key: keyof typeof UI_SOUNDS) => {
       playUrl(UI_SOUNDS[key]);
@@ -82,6 +89,13 @@ export const useAudio = () => {
     Object.values(UI_SOUNDS).forEach((url) => getHowl(url).load());
   }, [getHowl]);
 
+  const preloadIntro = useCallback(
+    (soundId: string) => {
+      getHowl(getAudioUrl(`introductions/intro-${soundId}.mp3`)).load();
+    },
+    [getHowl]
+  );
+
   useEffect(() => {
     return () => {
       cacheRef.current.forEach((howl) => howl.unload());
@@ -94,7 +108,9 @@ export const useAudio = () => {
     unlock,
     preloadUi,
     preloadForSound,
+    preloadIntro,
     playPhoneme,
+    playIntro,
     playWord,
     playUi
   };
