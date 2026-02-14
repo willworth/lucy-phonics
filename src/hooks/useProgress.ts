@@ -98,5 +98,87 @@ export const useProgress = (sounds: Sound[], requiredCorrect = 3) => {
     [progress, sounds]
   );
 
-  return { progress, loading, recordAttempt };
+  const resetSound = useCallback(
+    async (soundId: string) => {
+      if (!progress) {
+        return;
+      }
+
+      const existing = progress.sounds[soundId];
+      if (!existing) {
+        return;
+      }
+
+      const next = {
+        ...progress,
+        sounds: {
+          ...progress.sounds,
+          [soundId]: {
+            ...existing,
+            correct: 0,
+            attempts: 0
+          }
+        }
+      };
+
+      setProgress(next);
+      await set(STORAGE_KEY, next);
+    },
+    [progress]
+  );
+
+  const markSoundLearned = useCallback(
+    async (soundId: string) => {
+      if (!progress) {
+        return;
+      }
+
+      const existing = progress.sounds[soundId];
+      if (!existing) {
+        return;
+      }
+
+      const soundIndex = sounds.findIndex((sound) => sound.id === soundId);
+      if (soundIndex < 0) {
+        return;
+      }
+
+      const next = {
+        ...progress,
+        sounds: {
+          ...progress.sounds,
+          [soundId]: {
+            ...existing,
+            correct: progress.requiredCorrect,
+            unlocked: true
+          }
+        }
+      };
+
+      if (soundIndex < sounds.length - 1 && progress.unlockedSoundIndex <= soundIndex) {
+        const nextSoundId = sounds[soundIndex + 1]?.id;
+        if (nextSoundId) {
+          next.sounds[nextSoundId] = {
+            ...next.sounds[nextSoundId],
+            unlocked: true
+          };
+          next.unlockedSoundIndex = soundIndex + 1;
+        }
+      }
+
+      setProgress(next);
+      await set(STORAGE_KEY, next);
+    },
+    [progress, sounds]
+  );
+
+  const resetAll = useCallback(async () => {
+    const initial = createInitialProgress(sounds, requiredCorrect);
+    setProgress(initial);
+    await set(STORAGE_KEY, initial);
+  }, [requiredCorrect, sounds]);
+
+  const exportProgress = useCallback(() => progress, [progress]);
+
+  return { progress, loading, recordAttempt, resetSound, markSoundLearned, resetAll, exportProgress };
 };
