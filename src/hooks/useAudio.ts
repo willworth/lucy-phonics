@@ -9,6 +9,17 @@ const UI_SOUNDS = {
   tapStart: getAudioUrl('ui/tap-start.mp3')
 };
 
+const INSTRUCTION_AUDIO = [
+  'all-done',
+  'brilliant',
+  'can-you-find',
+  'lets-try-another',
+  'listen',
+  'tap-to-hear',
+  'thats-it',
+  'well-done'
+] as const;
+
 export const useAudio = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const cacheRef = useRef<Map<string, Howl>>(new Map());
@@ -68,6 +79,13 @@ export const useAudio = () => {
     [playUrl]
   );
 
+  const playInstruction = useCallback(
+    (name: string) => {
+      playUrl(getAudioUrl(`instructions/${name}.mp3`));
+    },
+    [playUrl]
+  );
+
   const playUi = useCallback(
     (key: keyof typeof UI_SOUNDS) => {
       playUrl(UI_SOUNDS[key]);
@@ -89,6 +107,12 @@ export const useAudio = () => {
     Object.values(UI_SOUNDS).forEach((url) => getHowl(url).load());
   }, [getHowl]);
 
+  const preloadInstructions = useCallback(() => {
+    INSTRUCTION_AUDIO.forEach((name) => {
+      getHowl(getAudioUrl(`instructions/${name}.mp3`)).load();
+    });
+  }, [getHowl]);
+
   const preloadIntro = useCallback(
     (soundId: string) => {
       getHowl(getAudioUrl(`introductions/intro-${soundId}.mp3`)).load();
@@ -107,10 +131,12 @@ export const useAudio = () => {
     isUnlocked,
     unlock,
     preloadUi,
+    preloadInstructions,
     preloadForSound,
     preloadIntro,
     playPhoneme,
     playIntro,
+    playInstruction,
     playWord,
     playUi
   };
