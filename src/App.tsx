@@ -122,7 +122,10 @@ function App() {
         }
       }
 
-      playInstruction('lets-try-another');
+      // Delay "let's try another" so it doesn't overlap the congratulatory audio
+      window.setTimeout(() => {
+        playInstruction('lets-try-another');
+      }, 1800);
       return result;
     },
     [matchRoundsDone, moveToSound, playInstruction, recordAttempt, sounds]
