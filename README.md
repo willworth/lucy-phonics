@@ -1,133 +1,116 @@
-# Lucy Phonics — Learn to Read
+# Lucy Phonics 🔤🎧
 
-A touch-based phonics app for Lucy (age 3, bilingual English/Spanish) running on iPhone.
+A Progressive Web App that teaches young children to recognise and distinguish English speech sounds. Built for a bilingual 3-year-old learning to read.
 
-## The Goal
+**Methodology:** Synthetic phonics (sounds first, not letter names) informed by Mentava and Jolly Phonics research. Phonemic awareness before blending — can she hear that /b/ and /d/ are different sounds?
 
-Help Lucy learn to read using evidence-based synthetic phonics — sounds first, not letter names. Smart introduction order. No confusing abstractions. Just a three-year-old tapping things on a phone and learning that marks on a screen are sounds, and sounds make words.
+## How It Works
 
-## Technical Approach: PWA (Progressive Web App)
+1. **Sound Introduction** — A new phoneme is presented with dad's voice: _"This says mmm! Like mmmmoon!"_
+2. **Sound Gallery** — Tap pictures to hear example words for that sound
+3. **Sound Matching** — _"Find the sound!"_ — pick the correct image from four options
+4. **Progression** — 3 correct matches unlocks the next sound. 4 rounds per session.
 
-**Why PWA, not a native app:**
-- No App Store, no Apple Developer account needed
-- Add to iPhone home screen → looks and feels like an app
-- Works offline (service worker caches everything)
-- Touch-first by design
-- Will can build and host it himself (fits in the monorepo or standalone)
-- Easy to iterate — push changes, Lucy gets them next time she opens it
+All audio is real voice recordings (no TTS). All images are AI-generated flat vector illustrations with a consistent style.
 
-**Stack (recommended):**
-- Vite + React (or plain HTML/JS — simplicity wins)
-- Web Audio API for letter sounds
-- Touch events (big tap targets, swipe gestures)
-- Service worker for offline support
-- Hosted anywhere (Vercel, own server, even localhost tunneled)
+## Phase 1 Sounds
 
-## Phonics Methodology
+Six sounds chosen for maximum early word-building potential:
 
-### Synthetic Phonics (UK approach, post-Rose Review 2006)
+| Sound | Example words |
+|-------|--------------|
+| /m/ | moon, monkey, map, mouse, milk |
+| /s/ | sun, sock, star, snail, snake |
+| /a/ | ant, cat, hat, bat, apple |
+| /t/ | tiger, tree, train, turtle, tap |
+| /p/ | pan, penguin, pink, puppy, pie |
+| /n/ | nose, nut, nest, net, nap |
 
-The gold standard for early reading. Core principles:
+## Running Locally
 
-1. **Sounds (phonemes), not letter names.** The letter 'b' is /b/ not "bee". The letter 's' is /s/ not "ess". Letter names come later — they confuse early readers.
+```bash
+git clone https://github.com/willworth/lucy-phonics.git
+cd lucy-phonics
+npm install
+npm run dev
+```
 
-2. **Introduction order matters.** Start with letters that let you build words quickly:
-   - **Group 1:** s, a, t, p, i, n → makes: sat, pin, tap, nap, pan, sit, tip, tan, ant, etc.
-   - **Group 2:** c/k, e, h, r, m, d
-   - **Group 3:** g, o, u, l, f, b
-   - **Group 4:** j, z, w, v, y, x
-   - **Group 5:** digraphs — sh, ch, th, ng, ai, ee, etc.
-   (This is the Jolly Phonics order — widely validated)
+Opens at `http://localhost:5173`.
 
-3. **Blending from day one.** As soon as Lucy knows s, a, t → she blends "sat". Reading = blending sounds. Not memorising whole words.
+### On a tablet or phone (local network)
 
-4. **Common confusions to address early:**
-   - b / d (mirror pair — the big one)
-   - p / q (mirror pair)
-   - m / n (similar sounds)
-   - Strategy: introduce them far apart in sequence, then explicitly contrast later
+```bash
+npx vite --host
+```
 
-### Bilingual Consideration (English + Spanish)
+Then visit `http://<your-computer-ip>:5173` from the device. Both must be on the same WiFi network.
 
-Lucy is bilingual. Spanish phonics is much more regular (near 1:1 letter-sound mapping).
-English is the hard one. Options:
-- **Start with English phonics** (harder, benefits from early start)
-- **Spanish phonics in parallel** (reinforces the concept, builds confidence)
-- **Don't mix in the same session** (keep language contexts separate)
+### Build for production
 
-This needs research — Will may have views from the PDF resources.
+```bash
+npm run build    # Output in dist/
+npm run preview  # Preview the production build
+```
 
-## App Design Principles (for a 3-year-old)
+## Tech Stack
 
-- **Giant touch targets.** Minimum 80px, ideally 120px+
-- **No text instructions.** Audio + visual only. She can't read yet (that's the point).
-- **Immediate audio feedback.** Tap a letter → hear the sound instantly
-- **Short sessions.** 3-5 minutes max. Attention span of a 3-year-old is ~5 mins for structured activity.
-- **No failure states.** Wrong answer → gentle redirect, not "wrong!" buzzer
-- **Celebration for correct.** Subtle — animation, sparkle, happy sound. Not overwhelming.
-- **Portrait orientation.** How kids hold phones.
-- **No scrolling.** Everything visible on one screen at a time.
-- **Chunked progression.** Master 2-3 sounds → unlock blending with those sounds → next sounds
+| Layer | Choice |
+|-------|--------|
+| Framework | Vite + React + TypeScript |
+| Styling | Tailwind CSS |
+| Audio | Howler.js |
+| PWA | vite-plugin-pwa (offline-capable) |
+| Storage | IndexedDB via idb-keyval |
+| Testing | Vitest + Testing Library |
 
-## Activity Types (brainstorm)
+## Design Principles
 
-### Phase 1: Individual Sounds
-- **Sound Introduction:** Big letter appears, plays sound, animated mouth shape
-- **Sound Recognition:** "Which one says /s/?" — tap the right letter from 2-3 options
-- **Sound Matching:** Hear a sound → tap the letter that makes it
+- **Giant touch targets** — minimum 80px, designed for small fingers on tablets
+- **No text instructions** — audio and visual only (she can't read yet — that's the point)
+- **No failure states** — wrong answers get gentle redirection, not buzzers
+- **Short sessions** — 3–5 minutes, matching a 3-year-old's attention span
+- **Offline-first** — service worker caches everything after first load
 
-### Phase 2: Blending (after ~6 sounds)
-- **Word Building:** Letters appear in sequence, each plays its sound, then blends: s...a...t → "sat"
-- **Picture Match:** Hear/see a blended word → tap the matching picture
-- **Sound Segmenting:** See a picture (e.g., cat) → tap the sounds in order: /c/ /a/ /t/
+## Parent Dashboard
 
-### Phase 3: Confusable Pairs
-- **b vs d Contrast:** Explicit side-by-side, "this one says /b/, this one says /d/"
-- **Sorting Game:** Hear a sound → drag to the correct letter (two options)
+Three-finger tap and hold anywhere opens the parent dashboard showing per-sound progress, accuracy stats, and options to reset or export data.
 
-## Methodology: Mentava + Jolly Phonics Hybrid
+## Tests
 
-Based on analysis of the Mentava Alphabet Sounds PDF (see `mentava-analysis.md`):
+```bash
+npm test         # Run all tests
+npm run lint     # ESLint
+```
 
-**Phase 1 — Sound Recognition (Mentava):** Introduce sounds one at a time with images.
-No reading yet. Build phonemic awareness.
+## Project Structure
 
-**Phase 2 — Sound Discrimination (Mentava):** Confusable sound pairs (b/d, s/sh, e/i, etc.)
-using minimal pairs. This is Mentava's strongest contribution.
+```
+src/
+  App.tsx                    # Session state machine
+  config.ts                  # Game constants
+  hooks/
+    useAudio.ts              # Howler.js wrapper, preloading, overlap protection
+    useProgress.ts           # IndexedDB progress tracking
+  pages/
+    SoundIntroPage.tsx       # "This says mmm!"
+    SoundGalleryPage.tsx     # Tap pictures, hear words
+    SoundMatchPage.tsx       # Core matching game
+    SessionCompletePage.tsx  # Celebration screen
+    ParentDashboard.tsx      # Progress stats
+  components/
+    ImageChoiceCard.tsx      # Tappable image with fallback
+    TapToStartSplash.tsx     # iOS audio unlock gate
+content/
+  en/sounds.json             # Sound/word/asset manifest
+assets/
+  audio/                     # Voice recordings (phonemes, words, instructions)
+  img/                       # AI-generated illustrations
+```
 
-**Phase 3 — Readiness Test:** Emoji pair test (🐶🐟 vs 🐟🐶) to check left-to-right
-comprehension. If she can't distinguish these, she's not ready for blending.
+## Audio Recording
 
-**Phase 4 — Blending (Jolly Phonics order):** Once ready, introduce s,a,t,p,i,n and
-start blending words. This is where Jolly Phonics' ordering is superior.
+All phoneme, word, and instruction audio was recorded on a Zoom H6, processed with FFmpeg loudness normalisation (`loudnorm`), and converted to MP3. See `RECORDING-SCRIPT.md` for the full list of 50 clips.
 
-## Resources
+## Licence
 
-- `Mentava Alphabet Sound.pdf` — 42MB phonics picture book (in this directory)
-- `mentava-analysis.md` — Full analysis of methodology, sound order, comparison pairs
-- Mentava (company): https://mentava.com
-- Jolly Phonics: https://jollylearning.co.uk/
-- Letters and Sounds (UK DfE framework): freely available
-
-## Status
-
-- [x] Project directory created
-- [x] Initial methodology research (Jolly Phonics)
-- [x] Mentava PDF obtained and analysed
-- [x] Hybrid methodology defined (Mentava awareness → Jolly Phonics blending)
-- [ ] Technical spike: minimal PWA with Phase 1 sounds
-- [ ] Audio recording: clean phoneme recordings without schwa (Will's voice ideal)
-- [ ] UI/UX wireframes for 3-year-old interaction
-- [ ] Prototype: Phase 1 sound recognition (first 6 sounds)
-
-## Open Questions
-
-1. **English first, Spanish first, or parallel?** Will's instinct + PDF resources will guide this
-2. **Audio source:** Record Will saying the sounds? TTS? Professional phonics audio clips?
-3. **Art style:** Simple illustrations for word-picture matching. Generate? Stock? Minimal?
-4. **Progress tracking:** Worth building, or just let Will observe and advance manually?
-5. **Where to host:** Vercel (easy), or self-hosted on the Linux box via Tailscale?
-
----
-
-*Created 2026-02-01. This is a real project, not a side-thought.*
+Private project — not open for contributions. Public for portfolio visibility.
