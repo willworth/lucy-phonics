@@ -2,7 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// GitHub Pages deploys to /repo-name/ subdirectory
+const base = process.env.BASE_URL || '/';
+
 export default defineConfig({
+  base,
   publicDir: 'assets',
   plugins: [
     react(),
