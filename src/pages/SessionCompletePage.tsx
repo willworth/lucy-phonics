@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
+import { getImageUrl } from '../utils/content';
 
 interface SessionCompletePageProps {
   onPlayDoneAudio: () => void;
   onPlayAgain: () => void;
+  soundsPracticed: string[];
+  attempts: number;
 }
 
 const CONFETTI_DOTS = [
@@ -17,7 +20,12 @@ const CONFETTI_DOTS = [
   { top: '80%', left: '84%', delay: '120ms' }
 ];
 
-export const SessionCompletePage = ({ onPlayDoneAudio, onPlayAgain }: SessionCompletePageProps) => {
+export const SessionCompletePage = ({
+  onPlayDoneAudio,
+  onPlayAgain,
+  soundsPracticed,
+  attempts
+}: SessionCompletePageProps) => {
   useEffect(() => {
     onPlayDoneAudio();
   }, [onPlayDoneAudio]);
@@ -33,11 +41,15 @@ export const SessionCompletePage = ({ onPlayDoneAudio, onPlayAgain }: SessionCom
           />
         ))}
 
-        <img src="/img/ui/star-correct.png" alt="Great work" className="mx-auto h-40 w-40 animate-pulse sm:h-48 sm:w-48" />
-        <img src="/img/ui/celebration.png" alt="Celebration" className="mx-auto mt-4 h-36 w-36 rounded-3xl object-cover sm:h-44 sm:w-44" />
+        <img src={getImageUrl('img/ui/star-correct.png')} alt="Great work" className="mx-auto h-40 w-40 animate-pulse sm:h-48 sm:w-48" />
+        <img src={getImageUrl('img/ui/celebration.png')} alt="Celebration" className="mx-auto mt-4 h-36 w-36 rounded-3xl object-cover sm:h-44 sm:w-44" />
 
         <h1 className="mt-5 text-4xl font-black text-teal-900 sm:text-5xl">All done!</h1>
         <p className="mt-3 text-xl font-bold text-teal-800 sm:text-2xl">You earned a star today.</p>
+        <p className="mt-3 text-base font-semibold text-teal-900 sm:text-lg">
+          Sounds practiced: {soundsPracticed.join(', ') || 'none'}.
+        </p>
+        <p className="mt-1 text-base font-semibold text-teal-900 sm:text-lg">Attempts this session: {attempts}</p>
 
         <button
           type="button"

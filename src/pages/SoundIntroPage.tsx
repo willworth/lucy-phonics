@@ -33,7 +33,7 @@ export const SoundIntroPage = ({
             className="flex min-h-[120px] min-w-[120px] items-center justify-center rounded-full bg-teal-600 shadow active:scale-95"
             aria-label="Replay sound"
           >
-            <img src="/img/ui/ear.png" alt="" className="h-14 w-14" />
+            <img src={getImageUrl('img/ui/ear.png')} alt="" className="h-14 w-14" />
           </button>
         </header>
 
@@ -69,7 +69,7 @@ export const SoundIntroPage = ({
             className="flex min-h-[120px] min-w-[120px] items-center justify-center rounded-full bg-emerald-500 shadow active:scale-95"
             aria-label="Next"
           >
-            <img src="/img/ui/arrow-next.png" alt="" className="h-14 w-14" />
+            <img src={getImageUrl('img/ui/arrow-next.png')} alt="" className="h-14 w-14" />
           </button>
         </footer>
       </div>
