@@ -3,6 +3,17 @@ import path from 'node:path';
 import rawSounds from '../../content/en/sounds.json';
 import { PHASE_ONE_SOUNDS, getAudioUrl, getImageUrl } from './content';
 
+const REQUIRED_INSTRUCTION_AUDIO = [
+  'all-done',
+  'brilliant',
+  'can-you-find',
+  'lets-try-another',
+  'listen',
+  'tap-to-hear',
+  'thats-it',
+  'well-done'
+];
+
 describe('content manifest', () => {
   it('contains required fields and only existing assets for phase 1', () => {
     const projectRoot = process.cwd();
@@ -31,5 +42,33 @@ describe('content manifest', () => {
   it('builds base-aware URLs', () => {
     expect(getImageUrl('img/ui/ear.png')).toContain('img/ui/ear.png');
     expect(getAudioUrl('words/m-moon.mp3')).toContain('audio/words/m-moon.mp3');
+  });
+
+  it('contains expected static media set', () => {
+    const projectRoot = process.cwd();
+    const imageRoot = path.join(projectRoot, 'assets/img');
+    const audioRoot = path.join(projectRoot, 'assets/audio');
+    const allPngs = fs
+      .readdirSync(imageRoot, { recursive: true })
+      .filter((entry) => typeof entry === 'string' && entry.endsWith('.png'));
+
+    expect(allPngs).toHaveLength(55);
+
+    for (const sound of PHASE_ONE_SOUNDS) {
+      const introFile = path.join(audioRoot, 'introductions', `intro-${sound.id}.mp3`);
+      expect(fs.existsSync(introFile)).toBe(true);
+    }
+
+    for (const instruction of REQUIRED_INSTRUCTION_AUDIO) {
+      const instructionFile = path.join(audioRoot, 'instructions', `${instruction}.mp3`);
+      expect(fs.existsSync(instructionFile)).toBe(true);
+    }
+
+    const uiFiles = ['correct.mp3', 'incorrect.mp3', 'tap-start.mp3'].map((name) =>
+      path.join(audioRoot, 'ui', name)
+    );
+    for (const uiFile of uiFiles) {
+      expect(fs.existsSync(uiFile)).toBe(true);
+    }
   });
 });

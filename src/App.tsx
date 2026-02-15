@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TapToStartSplash } from './components/TapToStartSplash';
 import {
   CORRECT_INSTRUCTION_ROTATION,
@@ -162,6 +162,26 @@ function App() {
   const activeSound = sounds[soundIndex];
   const activeProgress = progress?.sounds[activeSound.id] ?? { correct: 0, attempts: 0, unlocked: false };
 
+  const parentHint = (
+    <div className="fixed right-3 top-3 z-40 rounded-full bg-white/90 px-3 py-2 text-sm font-bold text-teal-900 shadow">
+      👨‍👩‍👧 Parent
+    </div>
+  );
+
+  const renderPlayShell = (content: ReactNode) => (
+    <div className="page-transition" {...gateHandlers}>
+      {parentHint}
+      {content}
+      {showOverlay ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70">
+          <p className="rounded-lg bg-slate-950/60 px-5 py-4 text-center text-lg font-semibold text-white">
+            Hold 3 seconds to enter parent mode
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+
   useEffect(() => {
     if (!progress || !isUnlocked || sessionState !== 'match') {
       return;
@@ -201,7 +221,7 @@ function App() {
   }
 
   if (sessionState === 'complete') {
-    return (
+    return renderPlayShell(
       <SessionCompletePage
         onPlayDoneAudio={handlePlayDoneAudio}
         onPlayAgain={handlePlayAgain}
@@ -212,7 +232,7 @@ function App() {
   }
 
   if (audioError) {
-    return (
+    return renderPlayShell(
       <main className="flex min-h-screen items-center justify-center p-6">
         <section className="w-full max-w-xl rounded-3xl bg-white/90 p-8 text-center shadow-lg">
           <img src={getImageUrl('img/ui/celebration.png')} alt="" className="mx-auto h-28 w-28 rounded-2xl object-cover opacity-80" />
@@ -234,7 +254,7 @@ function App() {
   }
 
   if (sessionState === 'intro') {
-    return (
+    return renderPlayShell(
       <SoundIntroPage
         sound={activeSound}
         onPlayPhoneme={playPhoneme}
@@ -246,7 +266,7 @@ function App() {
   }
 
   if (sessionState === 'gallery') {
-    return (
+    return renderPlayShell(
       <SoundGalleryPage
         sound={activeSound}
         onPlayPhoneme={playPhoneme}
@@ -256,8 +276,8 @@ function App() {
     );
   }
 
-  return (
-    <div {...gateHandlers}>
+  return renderPlayShell(
+    <>
       <SoundMatchPage
         sounds={sounds}
         unlockedSoundIndex={soundIndex}
@@ -270,14 +290,7 @@ function App() {
         onPlayUi={handlePlayUi}
         onAttempt={handleAttempt}
       />
-      {showOverlay ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70">
-          <p className="rounded-lg bg-slate-950/60 px-5 py-4 text-center text-lg font-semibold text-white">
-            Hold 3 seconds to enter parent mode
-          </p>
-        </div>
-      ) : null}
-    </div>
+    </>
   );
 }
 
