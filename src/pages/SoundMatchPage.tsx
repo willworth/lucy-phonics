@@ -116,7 +116,7 @@ export const SoundMatchPage = ({
         setStatus('idle');
         setBanner('');
         setRoundToken((value) => value + 1);
-      }, 850);
+      }, 2500);
       return;
     }
 
