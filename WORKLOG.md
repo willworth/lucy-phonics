@@ -81,3 +81,21 @@
 - 10:36:17 — 🏁 COMPLETE — Generated: 45 | Skipped: 5 | Errors: 0
 
 - 10:36:17 — Total images on disk: 55
+
+## 2026-02-15
+
+### 15:20 — KAL-1074 audit implementation pass (Codex)
+- Added test/tooling stack: Vitest + coverage, Testing Library, jsdom, fake-indexeddb, ESLint flat config.
+- Added 6 test files covering `useProgress`, `useAudio`, `content`, `shuffle`, `SoundMatchPage`, and high-level `App` flow.
+- Fixed base URL handling for image/audio asset helpers and replaced hardcoded `/img/...` usages across components/pages.
+- Improved audio robustness: overlap protection, preload sequencing, and audio error state with retry UX.
+- Added UX updates: 1.8s instruction delay, sound progress indicator (`Sound X of Y`), image fallback card state, session completion summary.
+- Extracted app constants into `src/config.ts`; updated PWA `start_url`/`scope` to respect base path.
+- Verification passed: `npm run lint`, `npm test`, `npm run build`.
+
+### 16:40 — KAL-1074 follow-up polish pass (Codex)
+- Added subtle page transition animation (`.page-transition`) for intro/gallery/match/complete/error views.
+- Added discoverable parent entry hint badge (still gated by 3-finger hold).
+- Expanded asset validation test to assert full 55 PNG image set and required instruction/intro/UI audio files.
+- Added `ImageChoiceCard` fallback regression test for broken image loads.
+- Re-ran verification: `npm run lint`, `npm test`, `npm run build` all passed.

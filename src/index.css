@@ -16,3 +16,18 @@ body {
 button {
   font: inherit;
 }
+
+@keyframes page-slide-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: page-slide-fade 240ms ease-out;
+}

@@ -20,8 +20,11 @@ const INSTRUCTION_AUDIO = [
   'well-done'
 ] as const;
 
+const toFriendlyAudioError = (url: string): string => `Audio failed to load: ${url.split('/').pop() ?? url}`;
+
 export const useAudio = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
   const cacheRef = useRef<Map<string, Howl>>(new Map());
 
   const getHowl = useCallback((url: string) => {
@@ -33,19 +36,57 @@ export const useAudio = () => {
     const howl = new Howl({
       src: [url],
       preload: true,
-      html5: false
+      html5: false,
+      onloaderror: () => {
+        setAudioError((current) => current ?? toFriendlyAudioError(url));
+      },
+      onplayerror: () => {
+        setAudioError((current) => current ?? `Audio playback failed: ${url.split('/').pop() ?? url}`);
+      }
     });
+
     cacheRef.current.set(url, howl);
     return howl;
+  }, []);
+
+  const stopAll = useCallback(() => {
+    cacheRef.current.forEach((howl) => howl.stop());
   }, []);
 
   const playUrl = useCallback(
     (url: string) => {
       const howl = getHowl(url);
-      howl.stop();
+      stopAll();
       howl.play();
     },
+    [getHowl, stopAll]
+  );
+
+  const loadHowl = useCallback(
+    async (url: string): Promise<void> => {
+      const howl = getHowl(url);
+      if (howl.state() === 'loaded') {
+        return;
+      }
+
+      await new Promise<void>((resolve) => {
+        const onLoad = () => resolve();
+        const onLoadError = () => resolve();
+        howl.once('load', onLoad);
+        howl.once('loaderror', onLoadError);
+        howl.load();
+      });
+    },
     [getHowl]
+  );
+
+  const preloadSequence = useCallback(
+    async (urls: string[]) => {
+      for (const url of urls) {
+        await loadHowl(url);
+      }
+    },
+    [loadHowl]
   );
 
   const unlock = useCallback(async () => {
@@ -94,31 +135,31 @@ export const useAudio = () => {
   );
 
   const preloadForSound = useCallback(
-    (sound: Sound) => {
-      getHowl(getAudioUrl(sound.phonemeAudio)).load();
-      sound.exampleWords.forEach((word) => {
-        getHowl(getAudioUrl(word.wordAudio)).load();
-      });
+    async (sound: Sound) => {
+      await preloadSequence([
+        getAudioUrl(sound.phonemeAudio),
+        ...sound.exampleWords.map((word) => getAudioUrl(word.wordAudio))
+      ]);
     },
-    [getHowl]
+    [preloadSequence]
   );
 
-  const preloadUi = useCallback(() => {
-    Object.values(UI_SOUNDS).forEach((url) => getHowl(url).load());
-  }, [getHowl]);
+  const preloadUi = useCallback(async () => {
+    await preloadSequence(Object.values(UI_SOUNDS));
+  }, [preloadSequence]);
 
-  const preloadInstructions = useCallback(() => {
-    INSTRUCTION_AUDIO.forEach((name) => {
-      getHowl(getAudioUrl(`instructions/${name}.mp3`)).load();
-    });
-  }, [getHowl]);
+  const preloadInstructions = useCallback(async () => {
+    await preloadSequence(INSTRUCTION_AUDIO.map((name) => getAudioUrl(`instructions/${name}.mp3`)));
+  }, [preloadSequence]);
 
   const preloadIntro = useCallback(
-    (soundId: string) => {
-      getHowl(getAudioUrl(`introductions/intro-${soundId}.mp3`)).load();
+    async (soundId: string) => {
+      await preloadSequence([getAudioUrl(`introductions/intro-${soundId}.mp3`)]);
     },
-    [getHowl]
+    [preloadSequence]
   );
+
+  const clearAudioError = useCallback(() => setAudioError(null), []);
 
   useEffect(() => {
     return () => {
@@ -129,6 +170,8 @@ export const useAudio = () => {
 
   return {
     isUnlocked,
+    audioError,
+    clearAudioError,
     unlock,
     preloadUi,
     preloadInstructions,

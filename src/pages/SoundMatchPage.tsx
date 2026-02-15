@@ -16,6 +16,8 @@ interface RoundOption {
 interface SoundMatchPageProps {
   sounds: Sound[];
   unlockedSoundIndex: number;
+  currentSoundIndex: number;
+  totalSounds: number;
   requiredCorrect: number;
   currentCorrectForSound: number;
   onPlayPhoneme: (sound: Sound) => void;
@@ -64,6 +66,8 @@ const buildRound = (sound: Sound, allSounds: Sound[]): RoundOption[] => {
 export const SoundMatchPage = ({
   sounds,
   unlockedSoundIndex,
+  currentSoundIndex,
+  totalSounds,
   requiredCorrect,
   currentCorrectForSound,
   onPlayPhoneme,
@@ -73,6 +77,7 @@ export const SoundMatchPage = ({
 }: SoundMatchPageProps) => {
   const [status, setStatus] = useState<'idle' | 'correct' | 'incorrect'>('idle');
   const [wrongOptionId, setWrongOptionId] = useState<string | null>(null);
+  const [tappedOptionId, setTappedOptionId] = useState<string | null>(null);
   const [roundToken, setRoundToken] = useState(0);
   const [banner, setBanner] = useState<string>('');
 
@@ -98,6 +103,10 @@ export const SoundMatchPage = ({
     }
 
     onPlayWord(option.wordAudio);
+    setTappedOptionId(option.id);
+    window.setTimeout(() => {
+      setTappedOptionId((current) => (current === option.id ? null : current));
+    }, 220);
 
     if (option.correct) {
       setStatus('correct');
@@ -135,9 +144,12 @@ export const SoundMatchPage = ({
             onClick={() => onPlayPhoneme(currentSound)}
             className="rounded-full bg-teal-600 px-5 py-3 text-lg font-bold text-white"
           >
-            <img src="/img/ui/ear.png" alt="Hear sound" className="inline h-6 w-6" /> Hear
+            <img src={getImageUrl('img/ui/ear.png')} alt="Hear sound" className="inline h-6 w-6" /> Hear
           </button>
           <div className="text-right">
+            <p className="text-xs font-semibold uppercase tracking-wide text-teal-600">
+              Sound {currentSoundIndex + 1} of {totalSounds}
+            </p>
             <p className="text-sm font-semibold text-teal-700">Sound progress</p>
             <p className="text-lg font-black text-teal-900">
               {currentCorrectForSound}/{requiredCorrect}
@@ -154,7 +166,7 @@ export const SoundMatchPage = ({
           ) : null}
           {status === 'correct' ? (
             <img
-              src="/img/ui/star-correct.png"
+              src={getImageUrl('img/ui/star-correct.png')}
               alt="Correct"
               className="mx-auto mt-2 h-16 w-16 animate-pop"
             />
@@ -171,6 +183,8 @@ export const SoundMatchPage = ({
               imageUrl={option.imageUrl}
               label={option.label}
               dimmed={status === 'incorrect' && wrongOptionId === option.id}
+              disabled={status === 'correct'}
+              pressed={tappedOptionId === option.id}
               onSelect={() => void handleChoice(option)}
             />
           ))}

@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TapToStartSplash } from './components/TapToStartSplash';
+import {
+  CORRECT_INSTRUCTION_ROTATION,
+  NEXT_ROUND_INSTRUCTION_DELAY_MS,
+  REQUIRED_CORRECT,
+  TOTAL_MATCH_ROUNDS
+} from './config';
 import { useAudio } from './hooks/useAudio';
 import { useParentGate } from './hooks/useParentGate';
 import { useProgress } from './hooks/useProgress';
@@ -8,13 +14,11 @@ import { SessionCompletePage } from './pages/SessionCompletePage';
 import { SoundGalleryPage } from './pages/SoundGalleryPage';
 import { SoundIntroPage } from './pages/SoundIntroPage';
 import { SoundMatchPage } from './pages/SoundMatchPage';
+import { getImageUrl } from './utils/content';
 import { PHASE_ONE_SOUNDS } from './utils/content';
 
-const REQUIRED_CORRECT = 3;
-const TOTAL_MATCH_ROUNDS = 4;
-const CORRECT_INSTRUCTION_ROTATION = ['well-done', 'thats-it', 'brilliant'] as const;
-
 type SessionState = 'splash' | 'intro' | 'gallery' | 'match' | 'complete';
+const delay = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
 function App() {
   const sounds = useMemo(() => PHASE_ONE_SOUNDS, []);
@@ -22,6 +26,8 @@ function App() {
     useProgress(sounds, REQUIRED_CORRECT);
   const {
     isUnlocked,
+    audioError,
+    clearAudioError,
     unlock,
     preloadUi,
     preloadInstructions,
@@ -39,6 +45,8 @@ function App() {
   const [currentSoundIndex, setCurrentSoundIndex] = useState(0);
   const [matchRoundsDone, setMatchRoundsDone] = useState(0);
   const [matchInstructionPlayedFor, setMatchInstructionPlayedFor] = useState<Record<string, true>>({});
+  const [sessionAttempts, setSessionAttempts] = useState(0);
+  const [sessionSoundIds, setSessionSoundIds] = useState<Record<string, true>>({});
   const correctInstructionIndexRef = useRef(0);
   const [parentMode, setParentMode] = useState(false);
   const { gateHandlers, showOverlay } = useParentGate(() => setParentMode(true));
@@ -62,8 +70,8 @@ function App() {
       const sound = sounds[clampedIndex];
 
       setCurrentSoundIndex(clampedIndex);
-      preloadForSound(sound);
-      preloadIntro(sound.id);
+      void preloadForSound(sound);
+      void preloadIntro(sound.id);
       setSessionState(isSoundIntroduced(clampedIndex) ? 'match' : 'intro');
     },
     [isSoundIntroduced, preloadForSound, preloadIntro, sounds]
@@ -76,8 +84,8 @@ function App() {
 
     setStarting(true);
     await unlock();
-    preloadUi();
-    preloadInstructions();
+    await preloadUi();
+    await preloadInstructions();
 
     const activeSoundIndex = Math.min(progress.unlockedSoundIndex, sounds.length - 1);
     moveToSound(activeSoundIndex);
@@ -100,6 +108,9 @@ function App() {
 
   const handleAttempt = useCallback(
     async (soundId: string, correct: boolean) => {
+      setSessionAttempts((attempts) => attempts + 1);
+      setSessionSoundIds((current) => ({ ...current, [soundId]: true }));
+
       const result = await recordAttempt(soundId, correct);
 
       if (!correct) {
@@ -122,10 +133,9 @@ function App() {
         }
       }
 
-      // Delay "let's try another" so it doesn't overlap the congratulatory audio
-      window.setTimeout(() => {
-        playInstruction('lets-try-another');
-      }, 1800);
+      // Delay "let's try another" so it doesn't overlap congratulatory audio
+      await delay(NEXT_ROUND_INSTRUCTION_DELAY_MS);
+      playInstruction('lets-try-another');
       return result;
     },
     [matchRoundsDone, moveToSound, playInstruction, recordAttempt, sounds]
@@ -137,6 +147,8 @@ function App() {
     }
 
     setMatchRoundsDone(0);
+    setSessionAttempts(0);
+    setSessionSoundIds({});
     correctInstructionIndexRef.current = 0;
     setMatchInstructionPlayedFor({});
     const activeSoundIndex = Math.min(progress.unlockedSoundIndex, sounds.length - 1);
@@ -150,6 +162,26 @@ function App() {
   const soundIndex = progress ? Math.min(currentSoundIndex, sounds.length - 1) : 0;
   const activeSound = sounds[soundIndex];
   const activeProgress = progress?.sounds[activeSound.id] ?? { correct: 0, attempts: 0, unlocked: false };
+
+  const parentHint = (
+    <div className="fixed right-3 top-3 z-40 rounded-full bg-white/90 px-3 py-2 text-sm font-bold text-teal-900 shadow">
+      👨‍👩‍👧 Parent
+    </div>
+  );
+
+  const renderPlayShell = (content: ReactNode) => (
+    <div className="page-transition" {...gateHandlers}>
+      {parentHint}
+      {content}
+      {showOverlay ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70">
+          <p className="rounded-lg bg-slate-950/60 px-5 py-4 text-center text-lg font-semibold text-white">
+            Hold 3 seconds to enter parent mode
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
 
   useEffect(() => {
     if (!progress || !isUnlocked || sessionState !== 'match') {
@@ -190,11 +222,40 @@ function App() {
   }
 
   if (sessionState === 'complete') {
-    return <SessionCompletePage onPlayDoneAudio={handlePlayDoneAudio} onPlayAgain={handlePlayAgain} />;
+    return renderPlayShell(
+      <SessionCompletePage
+        onPlayDoneAudio={handlePlayDoneAudio}
+        onPlayAgain={handlePlayAgain}
+        attempts={sessionAttempts}
+        soundsPracticed={Object.keys(sessionSoundIds)}
+      />
+    );
+  }
+
+  if (audioError) {
+    return renderPlayShell(
+      <main className="flex min-h-screen items-center justify-center p-6">
+        <section className="w-full max-w-xl rounded-3xl bg-white/90 p-8 text-center shadow-lg">
+          <img src={getImageUrl('img/ui/celebration.png')} alt="" className="mx-auto h-28 w-28 rounded-2xl object-cover opacity-80" />
+          <h1 className="mt-4 text-2xl font-black text-teal-900">Something went wrong with audio</h1>
+          <p className="mt-2 text-base font-semibold text-teal-700">{audioError}</p>
+          <button
+            type="button"
+            onClick={() => {
+              clearAudioError();
+              void handleStart();
+            }}
+            className="mt-6 rounded-full bg-teal-700 px-6 py-3 text-lg font-black text-white"
+          >
+            Retry
+          </button>
+        </section>
+      </main>
+    );
   }
 
   if (sessionState === 'intro') {
-    return (
+    return renderPlayShell(
       <SoundIntroPage
         sound={activeSound}
         onPlayPhoneme={playPhoneme}
@@ -206,7 +267,7 @@ function App() {
   }
 
   if (sessionState === 'gallery') {
-    return (
+    return renderPlayShell(
       <SoundGalleryPage
         sound={activeSound}
         onPlayPhoneme={playPhoneme}
@@ -216,11 +277,13 @@ function App() {
     );
   }
 
-  return (
-    <div {...gateHandlers}>
+  return renderPlayShell(
+    <>
       <SoundMatchPage
         sounds={sounds}
         unlockedSoundIndex={soundIndex}
+        currentSoundIndex={soundIndex}
+        totalSounds={sounds.length}
         requiredCorrect={progress.requiredCorrect}
         currentCorrectForSound={activeProgress.correct}
         onPlayPhoneme={playPhoneme}
@@ -228,14 +291,7 @@ function App() {
         onPlayUi={handlePlayUi}
         onAttempt={handleAttempt}
       />
-      {showOverlay ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70">
-          <p className="rounded-lg bg-slate-950/60 px-5 py-4 text-center text-lg font-semibold text-white">
-            Hold 3 seconds to enter parent mode
-          </p>
-        </div>
-      ) : null}
-    </div>
+    </>
   );
 }
 

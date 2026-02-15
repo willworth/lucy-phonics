@@ -1,3 +1,5 @@
+import { getImageUrl } from '../utils/content';
+
 interface TapToStartSplashProps {
   onStart: () => Promise<void>;
 }
@@ -7,7 +9,7 @@ export const TapToStartSplash = ({ onStart }: TapToStartSplashProps) => {
     <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-3xl rounded-3xl bg-white/80 p-8 text-center shadow-lg backdrop-blur">
         <img
-          src="/img/ui/splash.png"
+          src={getImageUrl('img/ui/splash.png')}
           alt="Tap to start"
           className="mx-auto h-52 w-52 rounded-3xl object-cover"
         />
