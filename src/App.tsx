@@ -133,6 +133,7 @@ function App() {
         }
       }
 
+      // Delay "let's try another" so it doesn't overlap congratulatory audio
       await delay(NEXT_ROUND_INSTRUCTION_DELAY_MS);
       playInstruction('lets-try-another');
       return result;
