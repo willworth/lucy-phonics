@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TapToStartSplash } from './components/TapToStartSplash';
 import { useAudio } from './hooks/useAudio';
+import { useParentGate } from './hooks/useParentGate';
 import { useProgress } from './hooks/useProgress';
+import { ParentDashboard } from './pages/ParentDashboard';
 import { SessionCompletePage } from './pages/SessionCompletePage';
 import { SoundGalleryPage } from './pages/SoundGalleryPage';
 import { SoundIntroPage } from './pages/SoundIntroPage';
@@ -16,7 +18,8 @@ type SessionState = 'splash' | 'intro' | 'gallery' | 'match' | 'complete';
 
 function App() {
   const sounds = useMemo(() => PHASE_ONE_SOUNDS, []);
-  const { progress, loading, recordAttempt } = useProgress(sounds, REQUIRED_CORRECT);
+  const { progress, loading, recordAttempt, resetSound, markSoundLearned, resetAll, exportProgress } =
+    useProgress(sounds, REQUIRED_CORRECT);
   const {
     isUnlocked,
     unlock,
@@ -37,6 +40,8 @@ function App() {
   const [matchRoundsDone, setMatchRoundsDone] = useState(0);
   const [matchInstructionPlayedFor, setMatchInstructionPlayedFor] = useState<Record<string, true>>({});
   const correctInstructionIndexRef = useRef(0);
+  const [parentMode, setParentMode] = useState(false);
+  const { gateHandlers, showOverlay } = useParentGate(() => setParentMode(true));
 
   const isSoundIntroduced = useCallback(
     (index: number) => {
@@ -167,6 +172,20 @@ function App() {
     return <TapToStartSplash onStart={handleStart} />;
   }
 
+  if (parentMode) {
+    return (
+      <ParentDashboard
+        sounds={sounds}
+        progress={progress}
+        onBack={() => setParentMode(false)}
+        onResetSound={resetSound}
+        onMarkSoundLearned={markSoundLearned}
+        onResetAll={resetAll}
+        onExportProgress={exportProgress}
+      />
+    );
+  }
+
   if (sessionState === 'complete') {
     return <SessionCompletePage onPlayDoneAudio={handlePlayDoneAudio} onPlayAgain={handlePlayAgain} />;
   }
@@ -195,16 +214,25 @@ function App() {
   }
 
   return (
-    <SoundMatchPage
-      sounds={sounds}
-      unlockedSoundIndex={soundIndex}
-      requiredCorrect={progress.requiredCorrect}
-      currentCorrectForSound={activeProgress.correct}
-      onPlayPhoneme={playPhoneme}
-      onPlayWord={playWord}
-      onPlayUi={handlePlayUi}
-      onAttempt={handleAttempt}
-    />
+    <div {...gateHandlers}>
+      <SoundMatchPage
+        sounds={sounds}
+        unlockedSoundIndex={soundIndex}
+        requiredCorrect={progress.requiredCorrect}
+        currentCorrectForSound={activeProgress.correct}
+        onPlayPhoneme={playPhoneme}
+        onPlayWord={playWord}
+        onPlayUi={handlePlayUi}
+        onAttempt={handleAttempt}
+      />
+      {showOverlay ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70">
+          <p className="rounded-lg bg-slate-950/60 px-5 py-4 text-center text-lg font-semibold text-white">
+            Hold 3 seconds to enter parent mode
+          </p>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
