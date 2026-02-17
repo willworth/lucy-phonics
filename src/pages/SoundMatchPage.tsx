@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Sound } from '../types';
 import { getImageUrl } from '../utils/content';
 import { shuffle } from '../utils/shuffle';
 import { ImageChoiceCard } from '../components/ImageChoiceCard';
+import { INCORRECT_REPLAY_DELAY_MS } from '../config';
 
 interface RoundOption {
   id: string;
@@ -20,16 +21,26 @@ interface SoundMatchPageProps {
   totalSounds: number;
   requiredCorrect: number;
   currentCorrectForSound: number;
+  optionCount: 2 | 3 | 4;
   onPlayPhoneme: (sound: Sound) => void;
   onPlayWord: (path: string) => void;
   onPlayUi: (name: 'correct' | 'incorrect') => void;
   onAttempt: (soundId: string, correct: boolean) => Promise<{ unlockedNext: boolean; finishedAll: boolean }>;
 }
 
-const OPTION_COUNT = 4;
+const CELEBRATION_STARS = [
+  { left: '14%', delay: '0ms' },
+  { left: '28%', delay: '90ms' },
+  { left: '42%', delay: '180ms' },
+  { left: '56%', delay: '270ms' },
+  { left: '70%', delay: '360ms' },
+  { left: '84%', delay: '450ms' }
+];
 
-const buildRound = (sound: Sound, allSounds: Sound[]): RoundOption[] => {
+const buildRound = (sound: Sound, allSounds: Sound[], optionCount: number): RoundOption[] => {
   const correctWord = shuffle(sound.exampleWords)[0];
+  const distractorCount = Math.max(1, optionCount - 1);
+
   const distractors = shuffle(
     allSounds
       .flatMap((item) =>
@@ -40,7 +51,7 @@ const buildRound = (sound: Sound, allSounds: Sound[]): RoundOption[] => {
       )
       .filter((item) => item.soundId !== sound.id)
   )
-    .slice(0, OPTION_COUNT - 1)
+    .slice(0, distractorCount)
     .map((item) => ({
       id: `${item.soundId}-${item.word.word}`,
       label: item.word.word,
@@ -70,6 +81,7 @@ export const SoundMatchPage = ({
   totalSounds,
   requiredCorrect,
   currentCorrectForSound,
+  optionCount,
   onPlayPhoneme,
   onPlayWord,
   onPlayUi,
@@ -77,9 +89,10 @@ export const SoundMatchPage = ({
 }: SoundMatchPageProps) => {
   const [status, setStatus] = useState<'idle' | 'correct' | 'incorrect'>('idle');
   const [wrongOptionId, setWrongOptionId] = useState<string | null>(null);
+  const [correctOptionId, setCorrectOptionId] = useState<string | null>(null);
   const [tappedOptionId, setTappedOptionId] = useState<string | null>(null);
   const [roundToken, setRoundToken] = useState(0);
-  const [banner, setBanner] = useState<string>('');
+  const timeoutIdsRef = useRef<number[]>([]);
 
   const currentSound = useMemo(() => {
     const clampedIndex = Math.min(unlockedSoundIndex, sounds.length - 1);
@@ -88,14 +101,28 @@ export const SoundMatchPage = ({
 
   const allCompleted = unlockedSoundIndex >= sounds.length - 1 && currentCorrectForSound >= requiredCorrect;
 
-  const options = useMemo(
-    () => buildRound(currentSound, sounds),
-    [currentSound, roundToken, sounds]
-  );
+  const options = useMemo(() => buildRound(currentSound, sounds, optionCount), [currentSound, optionCount, roundToken, sounds]);
+
+  const queueTimeout = (fn: () => void, ms: number) => {
+    const timeoutId = window.setTimeout(fn, ms);
+    timeoutIdsRef.current.push(timeoutId);
+  };
+
+  const clearQueuedTimeouts = () => {
+    timeoutIdsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    timeoutIdsRef.current = [];
+  };
 
   useEffect(() => {
     onPlayPhoneme(currentSound);
   }, [currentSound, onPlayPhoneme, roundToken]);
+
+  useEffect(
+    () => () => {
+      clearQueuedTimeouts();
+    },
+    []
+  );
 
   const handleChoice = async (option: RoundOption) => {
     if (status === 'correct') {
@@ -104,26 +131,22 @@ export const SoundMatchPage = ({
 
     onPlayWord(option.wordAudio);
     setTappedOptionId(option.id);
-    window.setTimeout(() => {
+    queueTimeout(() => {
       setTappedOptionId((current) => (current === option.id ? null : current));
     }, 220);
 
     if (option.correct) {
+      clearQueuedTimeouts();
       setStatus('correct');
       setWrongOptionId(null);
+      setCorrectOptionId(option.id);
       onPlayUi('correct');
-      const result = await onAttempt(currentSound.id, true);
-      if (result.finishedAll) {
-        setBanner('Amazing! You finished all Phase 1 sounds!');
-      } else if (result.unlockedNext) {
-        setBanner('Great work! New sound unlocked.');
-      } else {
-        setBanner('Great listening!');
-      }
+      await onAttempt(currentSound.id, true);
 
-      window.setTimeout(() => {
+      queueTimeout(() => {
         setStatus('idle');
-        setBanner('');
+        setWrongOptionId(null);
+        setCorrectOptionId(null);
         setRoundToken((value) => value + 1);
       }, 2500);
       return;
@@ -131,8 +154,18 @@ export const SoundMatchPage = ({
 
     setStatus('incorrect');
     setWrongOptionId(option.id);
+    setCorrectOptionId(null);
     onPlayUi('incorrect');
     await onAttempt(currentSound.id, false);
+
+    queueTimeout(() => {
+      onPlayPhoneme(currentSound);
+    }, INCORRECT_REPLAY_DELAY_MS);
+
+    queueTimeout(() => {
+      setStatus('idle');
+      setWrongOptionId(null);
+    }, INCORRECT_REPLAY_DELAY_MS + 700);
   };
 
   return (
@@ -160,20 +193,31 @@ export const SoundMatchPage = ({
         <section className="mb-5 text-center">
           <p className="text-sm font-semibold uppercase tracking-wide text-teal-600">Find the sound</p>
           <p className="mt-2 text-7xl font-black text-teal-900">{currentSound.display}</p>
-          {banner ? <p className="mt-2 text-xl font-bold text-emerald-700">{banner}</p> : null}
-          {status === 'incorrect' ? (
-            <p className="mt-2 text-lg font-semibold text-amber-700">Nice try. Tap and listen again.</p>
-          ) : null}
-          {status === 'correct' ? (
-            <img
-              src={getImageUrl('img/ui/star-correct.png')}
-              alt="Correct"
-              className="mx-auto mt-2 h-16 w-16 animate-pop"
-            />
-          ) : null}
-          {allCompleted ? (
-            <p className="mt-2 text-lg font-black text-teal-800">Phase 1 complete. Keep practicing for fun!</p>
-          ) : null}
+          <p className="mt-2 text-base font-bold text-teal-700">Choices this round: {optionCount}</p>
+
+          <div className="relative mx-auto mt-3 h-24 w-full max-w-sm">
+            {status === 'correct'
+              ? CELEBRATION_STARS.map((star) => (
+                  <span
+                    key={`${star.left}-${star.delay}`}
+                    className="absolute top-1/2 text-2xl animate-star-burst"
+                    style={{ left: star.left, animationDelay: star.delay }}
+                  >
+                    ✨
+                  </span>
+                ))
+              : null}
+
+            {status === 'correct' ? (
+              <img
+                src={getImageUrl('img/ui/star-correct.png')}
+                alt="Sparkly star"
+                className="mx-auto h-20 w-20 animate-bounce-grow"
+              />
+            ) : null}
+          </div>
+
+          {allCompleted ? <p className="mt-2 text-lg font-black text-teal-800">🌟 Phase 1 complete! 🌟</p> : null}
         </section>
 
         <section className="grid grid-cols-2 gap-4">
@@ -183,6 +227,8 @@ export const SoundMatchPage = ({
               imageUrl={option.imageUrl}
               label={option.label}
               dimmed={status === 'incorrect' && wrongOptionId === option.id}
+              wobble={status === 'incorrect' && wrongOptionId === option.id}
+              celebrate={status === 'correct' && correctOptionId === option.id}
               disabled={status === 'correct'}
               pressed={tappedOptionId === option.id}
               onSelect={() => void handleChoice(option)}

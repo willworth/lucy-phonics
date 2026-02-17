@@ -12,6 +12,7 @@ const makeProps = () => {
     totalSounds: sounds.length,
     requiredCorrect: 3,
     currentCorrectForSound: 1,
+    optionCount: 2 as const,
     onPlayPhoneme: vi.fn(),
     onPlayWord: vi.fn(),
     onPlayUi: vi.fn(),
@@ -23,18 +24,19 @@ const makeProps = () => {
 };
 
 describe('SoundMatchPage', () => {
-  it('shows sound progress indicator and includes one correct option', () => {
+  it('shows sound progress indicator and respects option count', () => {
     const props = makeProps();
     render(<SoundMatchPage {...props} />);
 
     expect(screen.getByText('Sound 1 of 2')).toBeInTheDocument();
+    expect(screen.getByText('Choices this round: 2')).toBeInTheDocument();
 
-    const options = ['moon', 'map', 'milk', 'monkey'];
-    const present = options.some((label) => screen.queryByText(label));
-    expect(present).toBe(true);
+    const allLabels = ['moon', 'map', 'milk', 'monkey', 'sun', 'sock', 'snake', 'star'];
+    const visibleLabels = allLabels.filter((label) => screen.queryByText(label));
+    expect(visibleLabels).toHaveLength(2);
   });
 
-  it('handles incorrect choice with feedback banner', async () => {
+  it('handles incorrect choice with gentle feedback', async () => {
     const props = makeProps();
     render(<SoundMatchPage {...props} />);
 
@@ -46,11 +48,11 @@ describe('SoundMatchPage', () => {
 
     expect(props.onPlayUi).toHaveBeenCalledWith('incorrect');
     await waitFor(() => {
-      expect(screen.getByText('Nice try. Tap and listen again.')).toBeInTheDocument();
+      expect(props.onAttempt).toHaveBeenCalledWith('m', false);
     });
   });
 
-  it('handles correct choice with success banner', async () => {
+  it('handles correct choice with celebration star', async () => {
     const props = makeProps();
     render(<SoundMatchPage {...props} />);
 
@@ -62,7 +64,7 @@ describe('SoundMatchPage', () => {
 
     await waitFor(() => {
       expect(props.onPlayUi).toHaveBeenCalledWith('correct');
-      expect(screen.getByText('Amazing! You finished all Phase 1 sounds!')).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'Sparkly star' })).toBeInTheDocument();
     });
   });
 });

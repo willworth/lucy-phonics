@@ -26,12 +26,12 @@ describe('content manifest', () => {
       expect(sound.display.length).toBeGreaterThan(0);
       expect(sound.exampleWords).toHaveLength(5);
 
-      const phonemePath = path.join(projectRoot, 'assets/audio', sound.phonemeAudio);
+      const phonemePath = path.join(projectRoot, 'public/audio', sound.phonemeAudio);
       expect(fs.existsSync(phonemePath)).toBe(true);
 
       for (const word of sound.exampleWords) {
-        const imagePath = path.join(projectRoot, 'assets', word.imageAsset);
-        const wordAudioPath = path.join(projectRoot, 'assets/audio', word.wordAudio);
+        const imagePath = path.join(projectRoot, 'public', word.imageAsset);
+        const wordAudioPath = path.join(projectRoot, 'public/audio', word.wordAudio);
 
         expect(fs.existsSync(imagePath)).toBe(true);
         expect(fs.existsSync(wordAudioPath)).toBe(true);
@@ -40,14 +40,19 @@ describe('content manifest', () => {
   });
 
   it('builds base-aware URLs', () => {
-    expect(getImageUrl('img/ui/ear.png')).toContain('img/ui/ear.png');
-    expect(getAudioUrl('words/m-moon.mp3')).toContain('audio/words/m-moon.mp3');
+    const imageUrl = getImageUrl('img/ui/ear.png');
+    const audioUrl = getAudioUrl('words/m-moon.mp3');
+
+    expect(imageUrl).toContain('img/ui/ear.png');
+    expect(audioUrl).toContain('audio/words/m-moon.mp3');
+    expect(imageUrl.includes('//')).toBe(false);
+    expect(audioUrl.includes('//')).toBe(false);
   });
 
   it('contains expected static media set', () => {
     const projectRoot = process.cwd();
-    const imageRoot = path.join(projectRoot, 'assets/img');
-    const audioRoot = path.join(projectRoot, 'assets/audio');
+    const imageRoot = path.join(projectRoot, 'public/img');
+    const audioRoot = path.join(projectRoot, 'public/audio');
     const allPngs = fs
       .readdirSync(imageRoot, { recursive: true })
       .filter((entry) => typeof entry === 'string' && entry.endsWith('.png'));

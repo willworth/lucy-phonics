@@ -4,7 +4,8 @@ import {
   CORRECT_INSTRUCTION_ROTATION,
   NEXT_ROUND_INSTRUCTION_DELAY_MS,
   REQUIRED_CORRECT,
-  TOTAL_MATCH_ROUNDS
+  TOTAL_MATCH_ROUNDS,
+  getOptionCountForCorrectAnswers
 } from './config';
 import { useAudio } from './hooks/useAudio';
 import { useParentGate } from './hooks/useParentGate';
@@ -46,6 +47,7 @@ function App() {
   const [matchRoundsDone, setMatchRoundsDone] = useState(0);
   const [matchInstructionPlayedFor, setMatchInstructionPlayedFor] = useState<Record<string, true>>({});
   const [sessionAttempts, setSessionAttempts] = useState(0);
+  const [sessionCorrectAnswers, setSessionCorrectAnswers] = useState(0);
   const [sessionSoundIds, setSessionSoundIds] = useState<Record<string, true>>({});
   const correctInstructionIndexRef = useRef(0);
   const [parentMode, setParentMode] = useState(false);
@@ -87,6 +89,12 @@ function App() {
     await preloadUi();
     await preloadInstructions();
 
+    setMatchRoundsDone(0);
+    setSessionAttempts(0);
+    setSessionCorrectAnswers(0);
+    setSessionSoundIds({});
+    setMatchInstructionPlayedFor({});
+    correctInstructionIndexRef.current = 0;
     const activeSoundIndex = Math.min(progress.unlockedSoundIndex, sounds.length - 1);
     moveToSound(activeSoundIndex);
     setStarting(false);
@@ -117,6 +125,7 @@ function App() {
         return result;
       }
 
+      setSessionCorrectAnswers((count) => count + 1);
       const nextRoundCount = matchRoundsDone + 1;
       setMatchRoundsDone(nextRoundCount);
 
@@ -148,6 +157,7 @@ function App() {
 
     setMatchRoundsDone(0);
     setSessionAttempts(0);
+    setSessionCorrectAnswers(0);
     setSessionSoundIds({});
     correctInstructionIndexRef.current = 0;
     setMatchInstructionPlayedFor({});
@@ -160,6 +170,7 @@ function App() {
   }, [playInstruction]);
 
   const soundIndex = progress ? Math.min(currentSoundIndex, sounds.length - 1) : 0;
+  const sessionOptionCount = getOptionCountForCorrectAnswers(sessionCorrectAnswers);
   const activeSound = sounds[soundIndex];
   const activeProgress = progress?.sounds[activeSound.id] ?? { correct: 0, attempts: 0, unlocked: false };
 
@@ -286,6 +297,7 @@ function App() {
         totalSounds={sounds.length}
         requiredCorrect={progress.requiredCorrect}
         currentCorrectForSound={activeProgress.correct}
+        optionCount={sessionOptionCount}
         onPlayPhoneme={playPhoneme}
         onPlayWord={playWord}
         onPlayUi={handlePlayUi}
