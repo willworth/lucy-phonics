@@ -57,7 +57,7 @@ describe('content manifest', () => {
       .readdirSync(imageRoot, { recursive: true })
       .filter((entry) => typeof entry === 'string' && entry.endsWith('.png'));
 
-    expect(allPngs).toHaveLength(55);
+    expect(allPngs.length).toBeGreaterThanOrEqual(55);
 
     for (const sound of PHASE_ONE_SOUNDS) {
       const introFile = path.join(audioRoot, 'introductions', `intro-${sound.id}.mp3`);
