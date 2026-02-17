@@ -27,11 +27,30 @@ export interface SoundProgress {
   correct: number;
   attempts: number;
   unlocked: boolean;
+  correctStreak: number;
+  lastPracticedAt: number | null;
 }
 
 export interface ProgressState {
-  schemaVersion: 1;
+  schemaVersion: 2;
   unlockedSoundIndex: number;
   requiredCorrect: number;
   sounds: Record<string, SoundProgress>;
+}
+
+export interface SessionRoundAnalytics {
+  soundId: string;
+  optionsShown: string[];
+  tappedOption: string;
+  tappedSoundId?: string;
+  correct: boolean;
+  responseTimeMs: number;
+  timestamp: number;
+}
+
+export interface SessionAnalytics {
+  sessionId: string;
+  startedAt: number;
+  endedAt: number;
+  rounds: SessionRoundAnalytics[];
 }

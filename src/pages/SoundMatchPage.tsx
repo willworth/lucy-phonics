@@ -14,6 +14,15 @@ interface RoundOption {
   correct: boolean;
 }
 
+export interface MatchAttemptPayload {
+  soundId: string;
+  optionsShown: string[];
+  tappedOption: string;
+  tappedSoundId?: string;
+  correct: boolean;
+  responseTimeMs: number;
+}
+
 interface SoundMatchPageProps {
   sounds: Sound[];
   unlockedSoundIndex: number;
@@ -25,7 +34,7 @@ interface SoundMatchPageProps {
   onPlayPhoneme: (sound: Sound) => void;
   onPlayWord: (path: string) => void;
   onPlayUi: (name: 'correct' | 'incorrect') => void;
-  onAttempt: (soundId: string, correct: boolean) => Promise<{ unlockedNext: boolean; finishedAll: boolean }>;
+  onAttempt: (payload: MatchAttemptPayload) => Promise<{ unlockedNext: boolean; finishedAll: boolean }>;
 }
 
 const CELEBRATION_STARS = [
@@ -93,6 +102,7 @@ export const SoundMatchPage = ({
   const [tappedOptionId, setTappedOptionId] = useState<string | null>(null);
   const [roundToken, setRoundToken] = useState(0);
   const timeoutIdsRef = useRef<number[]>([]);
+  const roundStartedAtRef = useRef<number>(Date.now());
 
   const currentSound = useMemo(() => {
     const clampedIndex = Math.min(unlockedSoundIndex, sounds.length - 1);
@@ -115,6 +125,7 @@ export const SoundMatchPage = ({
 
   useEffect(() => {
     onPlayPhoneme(currentSound);
+    roundStartedAtRef.current = Date.now();
   }, [currentSound, onPlayPhoneme, roundToken]);
 
   useEffect(
@@ -135,13 +146,23 @@ export const SoundMatchPage = ({
       setTappedOptionId((current) => (current === option.id ? null : current));
     }, 220);
 
+    const responseTimeMs = Math.max(0, Date.now() - roundStartedAtRef.current);
+    const attemptPayload: MatchAttemptPayload = {
+      soundId: currentSound.id,
+      optionsShown: options.map((item) => item.label),
+      tappedOption: option.label,
+      tappedSoundId: option.soundId,
+      correct: option.correct,
+      responseTimeMs
+    };
+
     if (option.correct) {
       clearQueuedTimeouts();
       setStatus('correct');
       setWrongOptionId(null);
       setCorrectOptionId(option.id);
       onPlayUi('correct');
-      await onAttempt(currentSound.id, true);
+      await onAttempt(attemptPayload);
 
       queueTimeout(() => {
         setStatus('idle');
@@ -156,10 +177,11 @@ export const SoundMatchPage = ({
     setWrongOptionId(option.id);
     setCorrectOptionId(null);
     onPlayUi('incorrect');
-    await onAttempt(currentSound.id, false);
+    await onAttempt(attemptPayload);
 
     queueTimeout(() => {
       onPlayPhoneme(currentSound);
+      roundStartedAtRef.current = Date.now();
     }, INCORRECT_REPLAY_DELAY_MS);
 
     queueTimeout(() => {

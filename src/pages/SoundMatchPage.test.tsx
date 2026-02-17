@@ -16,9 +16,9 @@ const makeProps = () => {
     onPlayPhoneme: vi.fn(),
     onPlayWord: vi.fn(),
     onPlayUi: vi.fn(),
-    onAttempt: vi.fn(async (_soundId: string, correct: boolean) => ({
+    onAttempt: vi.fn(async () => ({
       unlockedNext: false,
-      finishedAll: correct
+      finishedAll: false
     }))
   };
 };
@@ -48,7 +48,13 @@ describe('SoundMatchPage', () => {
 
     expect(props.onPlayUi).toHaveBeenCalledWith('incorrect');
     await waitFor(() => {
-      expect(props.onAttempt).toHaveBeenCalledWith('m', false);
+      expect(props.onAttempt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          soundId: 'm',
+          correct: false,
+          tappedOption: wrongLabel
+        })
+      );
     });
   });
 
@@ -64,6 +70,13 @@ describe('SoundMatchPage', () => {
 
     await waitFor(() => {
       expect(props.onPlayUi).toHaveBeenCalledWith('correct');
+      expect(props.onAttempt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          soundId: 'm',
+          correct: true,
+          tappedOption: correctLabel
+        })
+      );
       expect(screen.getByRole('img', { name: 'Sparkly star' })).toBeInTheDocument();
     });
   });

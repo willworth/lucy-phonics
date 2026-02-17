@@ -1,20 +1,32 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProgressState } from '../types';
+import type { ProgressState, SessionAnalytics } from '../types';
 import { makeSounds } from '../test/fixtures';
 import { ParentDashboard } from './ParentDashboard';
 
 const sounds = makeSounds();
 
 const progress: ProgressState = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   unlockedSoundIndex: 1,
   requiredCorrect: 3,
   sounds: {
-    m: { correct: 3, attempts: 4, unlocked: true },
-    s: { correct: 1, attempts: 3, unlocked: true }
+    m: { correct: 3, attempts: 4, unlocked: true, correctStreak: 2, lastPracticedAt: Date.now() - 1000 },
+    s: { correct: 1, attempts: 3, unlocked: true, correctStreak: 0, lastPracticedAt: Date.now() - 2000 }
   }
 };
+
+const sessions: SessionAnalytics[] = [
+  {
+    sessionId: 'session-1',
+    startedAt: Date.now() - 120000,
+    endedAt: Date.now() - 60000,
+    rounds: [
+      { soundId: 'm', optionsShown: ['moon', 'sun'], tappedOption: 'moon', tappedSoundId: 'm', correct: true, responseTimeMs: 1500, timestamp: Date.now() - 110000 },
+      { soundId: 's', optionsShown: ['moon', 'sun'], tappedOption: 'moon', tappedSoundId: 'm', correct: false, responseTimeMs: 3600, timestamp: Date.now() - 100000 }
+    ]
+  }
+];
 
 describe('ParentDashboard', () => {
   beforeEach(() => {
@@ -26,11 +38,12 @@ describe('ParentDashboard', () => {
       <ParentDashboard
         sounds={sounds}
         progress={progress}
+        sessions={sessions}
         onBack={vi.fn()}
         onResetSound={vi.fn()}
         onMarkSoundLearned={vi.fn()}
         onResetAll={vi.fn()}
-        onExportProgress={() => progress}
+        onExportProgress={async () => ({ progress, sessions })}
       />
     );
 
@@ -40,6 +53,9 @@ describe('ParentDashboard', () => {
 
     expect(screen.getByText('Mastered')).toBeInTheDocument();
     expect(screen.getByText('In progress')).toBeInTheDocument();
+    expect(screen.getByText('Recent Sessions')).toBeInTheDocument();
+    expect(screen.getByText('Hardest Sounds')).toBeInTheDocument();
+    expect(screen.getByText('Time to Answer')).toBeInTheDocument();
   });
 
   it('wires action buttons and reset-all confirmation', () => {
@@ -54,11 +70,12 @@ describe('ParentDashboard', () => {
       <ParentDashboard
         sounds={sounds}
         progress={progress}
+        sessions={sessions}
         onBack={onBack}
         onResetSound={onResetSound}
         onMarkSoundLearned={onMarkSoundLearned}
         onResetAll={onResetAll}
-        onExportProgress={() => progress}
+        onExportProgress={async () => ({ progress, sessions })}
       />
     );
 
@@ -78,7 +95,7 @@ describe('ParentDashboard', () => {
     expect(onResetAll).toHaveBeenCalledTimes(1);
   });
 
-  it('exports progress when export data exists', () => {
+  it('exports progress when export data exists', async () => {
     const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
     const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
 
@@ -99,39 +116,45 @@ describe('ParentDashboard', () => {
       <ParentDashboard
         sounds={sounds}
         progress={progress}
+        sessions={sessions}
         onBack={vi.fn()}
         onResetSound={vi.fn()}
         onMarkSoundLearned={vi.fn()}
         onResetAll={vi.fn()}
-        onExportProgress={() => progress}
+        onExportProgress={async () => ({ progress, sessions })}
       />
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Export Progress' }));
 
-    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(createObjectURL).toHaveBeenCalledTimes(1);
+    });
     expect(clickSpy).toHaveBeenCalledTimes(1);
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
     expect(createElementSpy).toHaveBeenCalledWith('a');
   });
 
-  it('does not export when no data is available', () => {
+  it('does not export when no data is available', async () => {
     const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
 
     render(
       <ParentDashboard
         sounds={sounds}
         progress={progress}
+        sessions={sessions}
         onBack={vi.fn()}
         onResetSound={vi.fn()}
         onMarkSoundLearned={vi.fn()}
         onResetAll={vi.fn()}
-        onExportProgress={() => null}
+        onExportProgress={async () => null}
       />
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Export Progress' }));
 
-    expect(createObjectURL).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(createObjectURL).not.toHaveBeenCalled();
+    });
   });
 });

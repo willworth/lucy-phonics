@@ -19,6 +19,7 @@ describe('useProgress', () => {
 
     const progress = result.current.progress;
     expect(progress).not.toBeNull();
+    expect(progress?.schemaVersion).toBe(2);
     expect(progress?.sounds.m.unlocked).toBe(true);
     expect(progress?.sounds.s.unlocked).toBe(false);
   });
@@ -32,7 +33,7 @@ describe('useProgress', () => {
     await act(async () => {
       await result.current.recordAttempt('m', true);
     });
-    let outcome = { unlockedNext: false, finishedAll: false };
+    let outcome = { unlockedNext: false, finishedAll: false, progress: null };
     await act(async () => {
       outcome = await result.current.recordAttempt('m', true);
     });
@@ -40,6 +41,7 @@ describe('useProgress', () => {
     expect(outcome.unlockedNext).toBe(true);
     expect(result.current.progress?.unlockedSoundIndex).toBe(1);
     expect(result.current.progress?.sounds.s.unlocked).toBe(true);
+    expect(result.current.progress?.sounds.m.correctStreak).toBe(2);
 
     const stored = await get<typeof result.current.progress>(STORAGE_KEY);
     expect(stored?.sounds.s.unlocked).toBe(true);
@@ -73,5 +75,6 @@ describe('useProgress', () => {
     const exported = result.current.exportProgress();
     expect(exported?.sounds.m.correct).toBe(0);
     expect(exported?.sounds.m.attempts).toBe(0);
+    expect(exported?.sounds.m.correctStreak).toBe(0);
   });
 });
