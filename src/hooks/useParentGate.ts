@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { TouchEvent } from 'react';
+import { type TouchEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface ParentGateResult {
   gateHandlers: {
