@@ -3,16 +3,16 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ProgressState } from './types';
 
 const progress: ProgressState = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   unlockedSoundIndex: 0,
   requiredCorrect: 3,
   sounds: {
-    m: { correct: 0, attempts: 0, unlocked: true },
-    s: { correct: 0, attempts: 0, unlocked: false },
-    a: { correct: 0, attempts: 0, unlocked: false },
-    t: { correct: 0, attempts: 0, unlocked: false },
-    p: { correct: 0, attempts: 0, unlocked: false },
-    n: { correct: 0, attempts: 0, unlocked: false }
+    m: { correct: 0, attempts: 0, unlocked: true, correctStreak: 0, lastPracticedAt: null },
+    s: { correct: 0, attempts: 0, unlocked: false, correctStreak: 0, lastPracticedAt: null },
+    a: { correct: 0, attempts: 0, unlocked: false, correctStreak: 0, lastPracticedAt: null },
+    t: { correct: 0, attempts: 0, unlocked: false, correctStreak: 0, lastPracticedAt: null },
+    p: { correct: 0, attempts: 0, unlocked: false, correctStreak: 0, lastPracticedAt: null },
+    n: { correct: 0, attempts: 0, unlocked: false, correctStreak: 0, lastPracticedAt: null }
   }
 };
 
@@ -20,12 +20,31 @@ vi.mock('./hooks/useProgress', () => ({
   useProgress: () => ({
     progress,
     loading: false,
-    recordAttempt: vi.fn(async () => ({ unlockedNext: false, finishedAll: false })),
+    recordAttempt: vi.fn(async () => ({ unlockedNext: false, finishedAll: false, progress })),
     resetSound: vi.fn(async () => undefined),
     markSoundLearned: vi.fn(async () => undefined),
     resetAll: vi.fn(async () => undefined),
     exportProgress: vi.fn(() => progress)
   })
+}));
+
+vi.mock('./hooks/useSessionAnalytics', () => ({
+  useSessionAnalytics: () => ({
+    sessions: [],
+    startSession: vi.fn(async () => undefined),
+    recordAttempt: vi.fn(),
+    endSession: vi.fn(async () => null),
+    refreshSessions: vi.fn(async () => []),
+    exportSessionAnalytics: vi.fn(async () => [])
+  })
+}));
+
+vi.mock('./components/TapToStartSplash', () => ({
+  TapToStartSplash: ({ onStart }: { onStart: () => void }) => (
+    <button type="button" onClick={onStart}>
+      TAP
+    </button>
+  )
 }));
 
 vi.mock('./hooks/useAudio', async () => {
@@ -60,7 +79,8 @@ describe('App flow', () => {
   it('moves from splash to intro on tap start', async () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'TAP' }));
+    const tapButton = await screen.findByRole('button', { name: 'TAP' });
+    fireEvent.click(tapButton);
 
     await waitFor(() => {
       expect(screen.getByLabelText('Play m sound')).toBeInTheDocument();

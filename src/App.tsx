@@ -1,4 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FriendlyLoadingScreen } from './components/FriendlyLoadingScreen';
+import { InstallPromptBanner } from './components/InstallPromptBanner';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { TapToStartSplash } from './components/TapToStartSplash';
 import {
   CORRECT_INSTRUCTION_ROTATION,
@@ -10,21 +13,26 @@ import {
 import { useAudio } from './hooks/useAudio';
 import { useParentGate } from './hooks/useParentGate';
 import { useProgress } from './hooks/useProgress';
+import { useSessionAnalytics } from './hooks/useSessionAnalytics';
 import { ParentDashboard } from './pages/ParentDashboard';
 import { SessionCompletePage } from './pages/SessionCompletePage';
 import { SoundGalleryPage } from './pages/SoundGalleryPage';
 import { SoundIntroPage } from './pages/SoundIntroPage';
-import { SoundMatchPage } from './pages/SoundMatchPage';
-import { getImageUrl } from './utils/content';
-import { PHASE_ONE_SOUNDS } from './utils/content';
+import { type MatchAttemptPayload, SoundMatchPage } from './pages/SoundMatchPage';
+import type { ProgressState } from './types';
+import { getImageUrl, PHASE_ONE_SOUNDS } from './utils/content';
+import { getNextSound } from './utils/spaced-repetition';
 
 type SessionState = 'splash' | 'intro' | 'gallery' | 'match' | 'complete';
 const delay = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+const MIN_LOADING_MS = import.meta.env.MODE === 'test' ? 0 : 1400;
 
 function App() {
   const sounds = useMemo(() => PHASE_ONE_SOUNDS, []);
   const { progress, loading, recordAttempt, resetSound, markSoundLearned, resetAll, exportProgress } =
     useProgress(sounds, REQUIRED_CORRECT);
+  const { sessions, startSession, recordAttempt: recordSessionAttempt, endSession, refreshSessions, exportSessionAnalytics } =
+    useSessionAnalytics();
   const {
     isUnlocked,
     audioError,
@@ -42,6 +50,7 @@ function App() {
   } = useAudio();
 
   const [starting, setStarting] = useState(false);
+  const [minimumLoadingDone, setMinimumLoadingDone] = useState(false);
   const [sessionState, setSessionState] = useState<SessionState>('splash');
   const [currentSoundIndex, setCurrentSoundIndex] = useState(0);
   const [matchRoundsDone, setMatchRoundsDone] = useState(0);
@@ -79,6 +88,24 @@ function App() {
     [isSoundIntroduced, preloadForSound, preloadIntro, sounds]
   );
 
+  const moveToWeightedSound = useCallback(
+    (nextProgress: ProgressState) => {
+      const nextSound = getNextSound(sounds, nextProgress);
+      const nextSoundIndex = sounds.findIndex((sound) => sound.id === nextSound.id);
+      moveToSound(nextSoundIndex >= 0 ? nextSoundIndex : 0);
+    },
+    [moveToSound, sounds]
+  );
+
+  const resetSessionState = useCallback(() => {
+    setMatchRoundsDone(0);
+    setSessionAttempts(0);
+    setSessionCorrectAnswers(0);
+    setSessionSoundIds({});
+    setMatchInstructionPlayedFor({});
+    correctInstructionIndexRef.current = 0;
+  }, []);
+
   const handleStart = async () => {
     if (starting || !progress) {
       return;
@@ -89,14 +116,9 @@ function App() {
     await preloadUi();
     await preloadInstructions();
 
-    setMatchRoundsDone(0);
-    setSessionAttempts(0);
-    setSessionCorrectAnswers(0);
-    setSessionSoundIds({});
-    setMatchInstructionPlayedFor({});
-    correctInstructionIndexRef.current = 0;
-    const activeSoundIndex = Math.min(progress.unlockedSoundIndex, sounds.length - 1);
-    moveToSound(activeSoundIndex);
+    resetSessionState();
+    await startSession();
+    moveToWeightedSound(progress);
     setStarting(false);
   };
 
@@ -115,13 +137,14 @@ function App() {
   );
 
   const handleAttempt = useCallback(
-    async (soundId: string, correct: boolean) => {
+    async (payload: MatchAttemptPayload) => {
       setSessionAttempts((attempts) => attempts + 1);
-      setSessionSoundIds((current) => ({ ...current, [soundId]: true }));
+      setSessionSoundIds((current) => ({ ...current, [payload.soundId]: true }));
+      recordSessionAttempt(payload);
 
-      const result = await recordAttempt(soundId, correct);
+      const result = await recordAttempt(payload.soundId, payload.correct);
 
-      if (!correct) {
+      if (!payload.correct) {
         return result;
       }
 
@@ -130,49 +153,66 @@ function App() {
       setMatchRoundsDone(nextRoundCount);
 
       if (nextRoundCount >= TOTAL_MATCH_ROUNDS) {
+        await endSession();
         setSessionState('complete');
         return result;
       }
 
-      if (result.unlockedNext) {
-        const nextSoundIndex = sounds.findIndex((item) => item.id === soundId) + 1;
-        if (nextSoundIndex > 0 && nextSoundIndex < sounds.length) {
-          moveToSound(nextSoundIndex);
-          return result;
-        }
+      if (result.progress) {
+        moveToWeightedSound(result.progress);
       }
 
-      // Delay "let's try another" so it doesn't overlap congratulatory audio
       await delay(NEXT_ROUND_INSTRUCTION_DELAY_MS);
       playInstruction('lets-try-another');
       return result;
     },
-    [matchRoundsDone, moveToSound, playInstruction, recordAttempt, sounds]
+    [endSession, matchRoundsDone, moveToWeightedSound, playInstruction, recordAttempt, recordSessionAttempt]
   );
 
-  const handlePlayAgain = useCallback(() => {
+  const handlePlayAgain = useCallback(async () => {
     if (!progress) {
       return;
     }
 
-    setMatchRoundsDone(0);
-    setSessionAttempts(0);
-    setSessionCorrectAnswers(0);
-    setSessionSoundIds({});
-    correctInstructionIndexRef.current = 0;
-    setMatchInstructionPlayedFor({});
-    const activeSoundIndex = Math.min(progress.unlockedSoundIndex, sounds.length - 1);
-    moveToSound(activeSoundIndex);
-  }, [moveToSound, progress, sounds.length]);
+    await endSession();
+    resetSessionState();
+    await startSession();
+    moveToWeightedSound(progress);
+  }, [endSession, moveToWeightedSound, progress, resetSessionState, startSession]);
 
   const handlePlayDoneAudio = useCallback(() => {
     playInstruction('all-done');
   }, [playInstruction]);
 
+  useEffect(() => {
+    if (!parentMode) {
+      return;
+    }
+
+    void refreshSessions();
+  }, [parentMode, refreshSessions]);
+
+  useEffect(() => {
+    return () => {
+      void endSession();
+    };
+  }, [endSession]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMinimumLoadingDone(true), MIN_LOADING_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const soundIndex = progress ? Math.min(currentSoundIndex, sounds.length - 1) : 0;
   const sessionOptionCount = getOptionCountForCorrectAnswers(sessionCorrectAnswers);
   const activeSound = sounds[soundIndex];
-  const activeProgress = progress?.sounds[activeSound.id] ?? { correct: 0, attempts: 0, unlocked: false };
+  const activeProgress = progress?.sounds[activeSound.id] ?? {
+    correct: 0,
+    attempts: 0,
+    unlocked: false,
+    correctStreak: 0,
+    lastPracticedAt: null
+  };
 
   const parentHint = (
     <div className="fixed right-3 top-3 z-40 rounded-full bg-white/90 px-3 py-2 text-sm font-bold text-teal-900 shadow">
@@ -194,6 +234,14 @@ function App() {
     </div>
   );
 
+  const renderWithGlobalUI = (content: ReactNode) => (
+    <>
+      {content}
+      <OfflineIndicator />
+      <InstallPromptBanner />
+    </>
+  );
+
   useEffect(() => {
     if (!progress || !isUnlocked || sessionState !== 'match') {
       return;
@@ -206,104 +254,122 @@ function App() {
     setMatchInstructionPlayedFor((current) => ({ ...current, [activeSound.id]: true }));
   }, [activeSound.id, isUnlocked, matchInstructionPlayedFor, playInstruction, progress, sessionState]);
 
-  if (loading || !progress) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-bold text-teal-800">Loading Lucy's sounds...</p>
-      </main>
-    );
+  if (loading || !progress || !minimumLoadingDone) {
+    return renderWithGlobalUI(<FriendlyLoadingScreen />);
   }
 
   if (!isUnlocked || sessionState === 'splash') {
-    return <TapToStartSplash onStart={handleStart} />;
+    return renderWithGlobalUI(<TapToStartSplash onStart={handleStart} />);
   }
 
   if (parentMode) {
-    return (
+    return renderWithGlobalUI(
       <ParentDashboard
         sounds={sounds}
         progress={progress}
+        sessions={sessions}
         onBack={() => setParentMode(false)}
         onResetSound={resetSound}
         onMarkSoundLearned={markSoundLearned}
         onResetAll={resetAll}
-        onExportProgress={exportProgress}
+        onExportProgress={async () => {
+          const progressData = exportProgress();
+          if (!progressData) {
+            return null;
+          }
+
+          const sessionData = await exportSessionAnalytics();
+          return {
+            progress: progressData,
+            sessions: sessionData
+          };
+        }}
       />
     );
   }
 
   if (sessionState === 'complete') {
-    return renderPlayShell(
-      <SessionCompletePage
-        onPlayDoneAudio={handlePlayDoneAudio}
-        onPlayAgain={handlePlayAgain}
-        attempts={sessionAttempts}
-        soundsPracticed={Object.keys(sessionSoundIds)}
-      />
+    return renderWithGlobalUI(
+      renderPlayShell(
+        <SessionCompletePage
+          onPlayDoneAudio={handlePlayDoneAudio}
+          onPlayAgain={() => void handlePlayAgain()}
+          attempts={sessionAttempts}
+          soundsPracticed={Object.keys(sessionSoundIds)}
+        />
+      )
     );
   }
 
   if (audioError) {
-    return renderPlayShell(
-      <main className="flex min-h-screen items-center justify-center p-6">
-        <section className="w-full max-w-xl rounded-3xl bg-white/90 p-8 text-center shadow-lg">
-          <img src={getImageUrl('img/ui/celebration.png')} alt="" className="mx-auto h-28 w-28 rounded-2xl object-cover opacity-80" />
-          <h1 className="mt-4 text-2xl font-black text-teal-900">Something went wrong with audio</h1>
-          <p className="mt-2 text-base font-semibold text-teal-700">{audioError}</p>
-          <button
-            type="button"
-            onClick={() => {
-              clearAudioError();
-              void handleStart();
-            }}
-            className="mt-6 rounded-full bg-teal-700 px-6 py-3 text-lg font-black text-white"
-          >
-            Retry
-          </button>
-        </section>
-      </main>
+    return renderWithGlobalUI(
+      renderPlayShell(
+        <main className="flex min-h-screen items-center justify-center p-6">
+          <section className="w-full max-w-xl rounded-3xl bg-white/90 p-8 text-center shadow-lg">
+            <img src={getImageUrl('img/ui/celebration.png')} alt="" className="mx-auto h-28 w-28 rounded-2xl object-cover opacity-80" />
+            <h1 className="mt-4 text-2xl font-black text-teal-900">Something went wrong with audio</h1>
+            <p className="mt-2 text-base font-semibold text-teal-700">{audioError}</p>
+            <button
+              type="button"
+              onClick={() => {
+                clearAudioError();
+                void handleStart();
+              }}
+              className="mt-6 rounded-full bg-teal-700 px-6 py-3 text-lg font-black text-white"
+            >
+              Retry
+            </button>
+          </section>
+        </main>
+      )
     );
   }
 
   if (sessionState === 'intro') {
-    return renderPlayShell(
-      <SoundIntroPage
-        sound={activeSound}
-        onPlayPhoneme={playPhoneme}
-        onPlayWord={playWord}
-        onPlayIntro={playIntro}
-        onNext={() => setSessionState('gallery')}
-      />
+    return renderWithGlobalUI(
+      renderPlayShell(
+        <SoundIntroPage
+          sound={activeSound}
+          onPlayPhoneme={playPhoneme}
+          onPlayWord={playWord}
+          onPlayIntro={playIntro}
+          onNext={() => setSessionState('gallery')}
+        />
+      )
     );
   }
 
   if (sessionState === 'gallery') {
-    return renderPlayShell(
-      <SoundGalleryPage
-        sound={activeSound}
-        onPlayPhoneme={playPhoneme}
-        onPlayWord={playWord}
-        onNext={() => setSessionState('match')}
-      />
+    return renderWithGlobalUI(
+      renderPlayShell(
+        <SoundGalleryPage
+          sound={activeSound}
+          onPlayPhoneme={playPhoneme}
+          onPlayWord={playWord}
+          onNext={() => setSessionState('match')}
+        />
+      )
     );
   }
 
-  return renderPlayShell(
-    <>
-      <SoundMatchPage
-        sounds={sounds}
-        unlockedSoundIndex={soundIndex}
-        currentSoundIndex={soundIndex}
-        totalSounds={sounds.length}
-        requiredCorrect={progress.requiredCorrect}
-        currentCorrectForSound={activeProgress.correct}
-        optionCount={sessionOptionCount}
-        onPlayPhoneme={playPhoneme}
-        onPlayWord={playWord}
-        onPlayUi={handlePlayUi}
-        onAttempt={handleAttempt}
-      />
-    </>
+  return renderWithGlobalUI(
+    renderPlayShell(
+      <>
+        <SoundMatchPage
+          sounds={sounds}
+          unlockedSoundIndex={soundIndex}
+          currentSoundIndex={soundIndex}
+          totalSounds={sounds.length}
+          requiredCorrect={progress.requiredCorrect}
+          currentCorrectForSound={activeProgress.correct}
+          optionCount={sessionOptionCount}
+          onPlayPhoneme={playPhoneme}
+          onPlayWord={playWord}
+          onPlayUi={handlePlayUi}
+          onAttempt={handleAttempt}
+        />
+      </>
+    )
   );
 }
 
