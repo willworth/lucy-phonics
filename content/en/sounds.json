@@ -25,6 +25,18 @@
         "k",
         "e"
       ]
+    },
+    "3": {
+      "name": "Growing",
+      "description": "Phase 3 sounds building vocabulary.",
+      "sounds": [
+        "r",
+        "o",
+        "g",
+        "l",
+        "f",
+        "u"
+      ]
     }
   },
   "sounds": [
@@ -517,6 +529,252 @@
           "imageAsset": "img/sounds/e/red.png",
           "wordAudio": "words/e-red.mp3",
           "soundPosition": "middle"
+        }
+      ]
+    },
+    {
+      "id": "r",
+      "locale": "en-GB",
+      "type": "consonant",
+      "display": "r",
+      "phase": 3,
+      "phonemeAudio": "phonemes/r.mp3",
+      "pronunciationTip": "Say 'rrr', not 'ruh'. A rolling or vibrating sound.",
+      "exampleWords": [
+        {
+          "word": "rain",
+          "imageAsset": "img/sounds/r/rain.png",
+          "wordAudio": "words/r-rain.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "robot",
+          "imageAsset": "img/sounds/r/robot.png",
+          "wordAudio": "words/r-robot.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "rocket",
+          "imageAsset": "img/sounds/r/rocket.png",
+          "wordAudio": "words/r-rocket.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "rabbit",
+          "imageAsset": "img/sounds/r/rabbit.png",
+          "wordAudio": "words/r-rabbit.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "ring",
+          "imageAsset": "img/sounds/r/ring.png",
+          "wordAudio": "words/r-ring.mp3",
+          "soundPosition": "start"
+        }
+      ]
+    },
+    {
+      "id": "o",
+      "locale": "en-GB",
+      "type": "short-vowel",
+      "display": "o",
+      "phase": 3,
+      "phonemeAudio": "phonemes/o.mp3",
+      "pronunciationTip": "The short 'o' as in 'hot'. Say 'oh', not 'owe'.",
+      "exampleWords": [
+        {
+          "word": "octopus",
+          "imageAsset": "img/sounds/o/octopus.png",
+          "wordAudio": "words/o-octopus.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "orange",
+          "imageAsset": "img/sounds/o/orange.png",
+          "wordAudio": "words/o-orange.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "otter",
+          "imageAsset": "img/sounds/o/otter.png",
+          "wordAudio": "words/o-otter.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "ostrich",
+          "imageAsset": "img/sounds/o/ostrich.png",
+          "wordAudio": "words/o-ostrich.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "olive",
+          "imageAsset": "img/sounds/o/olive.png",
+          "wordAudio": "words/o-olive.mp3",
+          "soundPosition": "start"
+        }
+      ]
+    },
+    {
+      "id": "g",
+      "locale": "en-GB",
+      "type": "consonant",
+      "display": "g",
+      "phase": 3,
+      "phonemeAudio": "phonemes/g.mp3",
+      "pronunciationTip": "Say 'g-', not 'guh'. A hard back-of-throat sound.",
+      "exampleWords": [
+        {
+          "word": "goat",
+          "imageAsset": "img/sounds/g/goat.png",
+          "wordAudio": "words/g-goat.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "guitar",
+          "imageAsset": "img/sounds/g/guitar.png",
+          "wordAudio": "words/g-guitar.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "grapes",
+          "imageAsset": "img/sounds/g/grapes.png",
+          "wordAudio": "words/g-grapes.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "ghost",
+          "imageAsset": "img/sounds/g/ghost.png",
+          "wordAudio": "words/g-ghost.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "gorilla",
+          "imageAsset": "img/sounds/g/gorilla.png",
+          "wordAudio": "words/g-gorilla.mp3",
+          "soundPosition": "start"
+        }
+      ]
+    },
+    {
+      "id": "l",
+      "locale": "en-GB",
+      "type": "consonant",
+      "display": "l",
+      "phase": 3,
+      "phonemeAudio": "phonemes/l.mp3",
+      "pronunciationTip": "Say 'lll', not 'luh'. Tongue touches behind top teeth.",
+      "exampleWords": [
+        {
+          "word": "lion",
+          "imageAsset": "img/sounds/l/lion.png",
+          "wordAudio": "words/l-lion.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "lemon",
+          "imageAsset": "img/sounds/l/lemon.png",
+          "wordAudio": "words/l-lemon.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "leaf",
+          "imageAsset": "img/sounds/l/leaf.png",
+          "wordAudio": "words/l-leaf.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "ladybug",
+          "imageAsset": "img/sounds/l/ladybug.png",
+          "wordAudio": "words/l-ladybug.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "lamp",
+          "imageAsset": "img/sounds/l/lamp.png",
+          "wordAudio": "words/l-lamp.mp3",
+          "soundPosition": "start"
+        }
+      ]
+    },
+    {
+      "id": "f",
+      "locale": "en-GB",
+      "type": "consonant",
+      "display": "f",
+      "phase": 3,
+      "phonemeAudio": "phonemes/f.mp3",
+      "pronunciationTip": "Say 'fff', not 'fuh'. Teeth touch lower lip, blow air.",
+      "exampleWords": [
+        {
+          "word": "fish",
+          "imageAsset": "img/sounds/f/fish.png",
+          "wordAudio": "words/f-fish.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "flower",
+          "imageAsset": "img/sounds/f/flower.png",
+          "wordAudio": "words/f-flower.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "frog",
+          "imageAsset": "img/sounds/f/frog.png",
+          "wordAudio": "words/f-frog.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "fire",
+          "imageAsset": "img/sounds/f/fire.png",
+          "wordAudio": "words/f-fire.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "feather",
+          "imageAsset": "img/sounds/f/feather.png",
+          "wordAudio": "words/f-feather.mp3",
+          "soundPosition": "start"
+        }
+      ]
+    },
+    {
+      "id": "u",
+      "locale": "en-GB",
+      "type": "short-vowel",
+      "display": "u",
+      "phase": 3,
+      "phonemeAudio": "phonemes/u.mp3",
+      "pronunciationTip": "The short 'u' as in 'cup'. Say 'uh', not 'you'.",
+      "exampleWords": [
+        {
+          "word": "umbrella",
+          "imageAsset": "img/sounds/u/umbrella.png",
+          "wordAudio": "words/u-umbrella.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "unicorn",
+          "imageAsset": "img/sounds/u/unicorn.png",
+          "wordAudio": "words/u-unicorn.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "up",
+          "imageAsset": "img/sounds/u/up.png",
+          "wordAudio": "words/u-up.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "underwear",
+          "imageAsset": "img/sounds/u/underwear.png",
+          "wordAudio": "words/u-underwear.mp3",
+          "soundPosition": "start"
+        },
+        {
+          "word": "umpire",
+          "imageAsset": "img/sounds/u/umpire.png",
+          "wordAudio": "words/u-umpire.mp3",
+          "soundPosition": "start"
         }
       ]
     }
