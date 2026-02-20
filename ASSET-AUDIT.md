@@ -1,7 +1,10 @@
 # Lucy Phonics — Asset Audit
 
-**Date:** 2026-02-20  
-**Audited by:** Grace
+**Date:** 2026-02-20 (Friday)  
+**Audited by:** Grace  
+**⚠️ Note:** Previous reports (from overnight build marathon 2026-02-18) incorrectly stated ~30 audio files existed and ~66 were needed. **The actual count is 53 recorded files.** This audit was done by scanning the actual filesystem, not relying on previous reports.  
+**Recording plan:** See `RECORDING-SESSION-PLAN.md` for the checklist of what Will needs to record.  
+**Blog post material:** The overhang angle (human blocker, father's voice) is captured in `RECORDING-SESSION-PLAN.md` and `memory/2026-02-20.md` in the martha repo.
 
 ## Status
 
